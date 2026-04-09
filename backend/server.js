@@ -9,7 +9,7 @@ app.use(express.json());
 
 app.use(cors());
 
-app.use("/users", userRoute);
+app.use("/api/users", userRoute);
 
 // health check
 app.get("/", (req, res) => {
