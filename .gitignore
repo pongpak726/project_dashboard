@@ -4,9 +4,9 @@
 node_modules
 .env
 .env.*
-*.log
 .DS_Store
 Thumbs.db
+*.tsbuildinfo
 
 # ========================
 # FRONTEND (Next.js)
@@ -16,7 +16,6 @@ frontend/.next
 frontend/out
 frontend/build
 frontend/.vercel
-frontend/*.tsbuildinfo
 
 # ========================
 # BACKEND
@@ -25,6 +24,8 @@ backend/node_modules
 backend/.env
 backend/generated
 backend/prisma/generated
+backend/prisma/dev.db
+backend/prisma/*.db
 
 # ========================
 # LOGS / CACHE
@@ -45,3 +46,9 @@ pnpm-debug.log*
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# ========================
+# IDE
+# ========================
+.vscode
+.idea
