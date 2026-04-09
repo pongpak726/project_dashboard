@@ -1,0 +1,3 @@
+database MYSQL 8.1
+user: Admin
+Password: Admin1234
