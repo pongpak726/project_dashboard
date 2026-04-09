@@ -16,7 +16,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow-md">
-        <div className="max-w-6xl mx-auto px-4 py-3 grid grid-cols-3 items-center">
+        <div className="max-w-10xl mx-auto px-4 py-3 grid grid-cols-3 items-center">
             
             {/* LEFT */}
             <div className="text-black font-bold">

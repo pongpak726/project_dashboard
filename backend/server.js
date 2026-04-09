@@ -1,7 +1,22 @@
-const app = require("./index");
+const express = require("express");
+const app = express();
+const cors = require("cors");
 
-const PORT = 5000;
+const userRoute = require("./routes/user.route");
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// middleware
+app.use(express.json());
+
+app.use(cors());
+
+app.use("/users", userRoute);
+
+// health check
+app.get("/", (req, res) => {
+  res.send("Backend running 🚀");
 });
+
+
+
+module.exports = app;
+
