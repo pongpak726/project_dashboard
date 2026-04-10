@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 
 const userRoute = require("./routes/user.route");
+const authRoutes = require("./routes/auth.routes")
 
 // middleware
 app.use(express.json());
@@ -10,6 +11,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/api/users", userRoute);
+app.use("/api/auth",authRoutes) ;
 
 // health check
 app.get("/", (req, res) => {
