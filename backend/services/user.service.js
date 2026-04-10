@@ -1,16 +1,28 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+// get
 exports.getUsers = () => {
-  return prisma.user.findMany();
+  return prisma.user.findMany({
+  select: {
+    id: true,
+    email: true,
+    name: true,
+    role: true,
+    isActive: true,
+    createdAt: true
+  }
+})
 };
 
+// get by ID
 exports.getUserById = (id) => {
   return prisma.user.findUnique({
     where: { id }
   });
 };
 
+// create 
 exports.createUser = (data) => {
   return prisma.user.create({ data });
 };
@@ -33,6 +45,7 @@ exports.updateUser = async (id, data) => {
   }
 };
 
+// delete
 exports.deleteUser = (id) => {
   return prisma.user.delete({
     where: { id }

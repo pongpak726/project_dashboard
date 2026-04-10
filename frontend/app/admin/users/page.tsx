@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers, createUser, updateUser, deleteUser } from "../../services/user.service";
+import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
 import Swal from "sweetalert2";
 
 export default function UsersPage() {
@@ -199,7 +199,7 @@ export default function UsersPage() {
       </div>
     </div>
   
-
+          {/* ==================Modal session==================== */}
   {isOpen && (
   <div className={`fixed inset-0 flex items-center justify-center z-50 text-black
     transition-opacity duration-200
