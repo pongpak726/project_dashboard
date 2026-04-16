@@ -1,7 +1,12 @@
 const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/users`;
 
 export const getUsers = async () => {
-  const res = await fetch(API_URL);
+  const token = localStorage.getItem("token")
+  
+  const res = await fetch(API_URL , {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }})
 
   if (!res.ok) {
     throw new Error("Failed to fetch users");
