@@ -2,6 +2,9 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { hashPassword } = require("../utils/hash")
 
+const { comparePassword } = require("../utils/hash")
+const { generateToken } = require("../utils/jwt")
+
 exports.register = async (data) => {
     const hashed = await hashPassword(data.password)
 
@@ -20,4 +23,29 @@ exports.register = async (data) => {
             createdAt: true
         }
     })
+}
+
+exports.login = async (data) => {
+    const user = await prisma.user.findUnique({
+        where: { email: data.email }
+    })
+
+    if (!user) {
+        throw new Error("User not found")
+    }
+
+    const isMatch = await comparePassword(data.password, user.password)
+
+    if (!isMatch) {
+        throw new Error("Invalid password")
+    }
+
+    const token = generateToken({
+        id: user.id,
+        role: user.role
+    })
+
+    return {
+        token
+    }
 }
