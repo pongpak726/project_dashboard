@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -19,6 +17,8 @@ export const metadata: Metadata = {
   description: "dashboard website",
 };
 
+  
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,16 +29,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      
-      <body className="h-full min-h-screen flex flex-col bg-gray-100">
-      <Navbar />
-
-      <main className="flex-1">
+      <body className="min-h-screen bg-gray-100">
         {children}
-      </main>
-
-      <Footer />
-    </body>
+      </body>
 
     </html>
   );

@@ -11,7 +11,7 @@ export default function Home() {
         จัดการข้อมูลผู้ใช้
       </p>
 
-      <Link href="/login" className="w-100 mt-6 px-6 py-2 bg-blue-500 text-white rounded" >
+      <Link href="/login" className="w-100 mt-6 px-6 py-2 bg-blue-500 text-white rounded text-center font-bold" >
         Login
       </Link>
 
