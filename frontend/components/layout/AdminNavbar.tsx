@@ -11,24 +11,13 @@ export default function AdminNavbar() {
     }
 
     return(
-        <aside className="w-64 bg-gray-800 text-white p-4 flex flex-col justify-between">
+        <aside className="w-64 h-screen sticky top-0 bg-gray-800 text-white p-4 flex flex-col justify-between">
             <div>
                 <h2 className="font-bold mb-4">Admin</h2>
 
                 <ul className="space-y-2">
-                <li
-                    className="cursor-pointer hover:text-gray-300"
-                    onClick={() => router.push("/dashboard")}
-                >
-                    Dashboard
-                </li>
-
-                <li
-                    className="cursor-pointer hover:text-gray-300"
-                    onClick={() => router.push("/admin/users")}
-                >
-                    Users
-                </li>
+                <li onClick={() => router.push("/dashboard")}>Dashboard</li>
+                <li onClick={() => router.push("/admin/users")}>Users</li>
                 </ul>
             </div>
 

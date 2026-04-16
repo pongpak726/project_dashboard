@@ -36,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={`${poppins.variable} h-full antialiased`}
     >
-      <body className="min-h-screen bg-gray-100">
+      <body className="min-h-screen bg-gray-100 overflow-x-hidden">
         {children}
       </body>
 
