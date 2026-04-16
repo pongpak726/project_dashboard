@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
 import Swal from "sweetalert2";
+import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
+  // ====redirect====
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
+
+  
   // ====Declare====
   type User = {
   id: string;
@@ -34,6 +40,24 @@ export default function UsersPage() {
     setIsOpen(true);
   };
 // ========
+
+// ====auth====
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+
+      if (!token) {
+        router.push("/login")
+        return
+      }
+
+      const payload = JSON.parse(atob(token.split(".")[1]))
+
+      if (payload.role !== "ADMIN") {
+        router.push("/dashboard")
+      } else {
+        setLoading(false)
+      }
+    }, [])
 
 // ====Edit User====
   const handleUpdateUser = async () => {
@@ -90,9 +114,6 @@ export default function UsersPage() {
     setUsers(data);
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
 
   // ====Add User====
   const handleAddUser = async () => {
@@ -157,6 +178,18 @@ export default function UsersPage() {
     }
   };
   // ========
+
+
+    
+  // ====redirect====
+  useEffect(() => {
+    if (!loading) {
+      loadUsers()
+    }
+  }, [loading])
+
+  if (loading) return <div>Loading...</div>
+
 
   return (
     <>
