@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { decodeToken } from "@/app/lib/auth";
 
 export default function UsersPage() {
   // ====redirect====
@@ -43,21 +44,32 @@ export default function UsersPage() {
 
 // ====auth====
   useEffect(() => {
-    const token = localStorage.getItem("token")
+  const token = localStorage.getItem("token")
 
-      if (!token) {
-        router.push("/login")
-        return
-      }
+  //====ไม่มี token=====
+  if (!token) {
+    router.push("/login")
+    return
+  }
 
-      const payload = JSON.parse(atob(token.split(".")[1]))
+  //====decode====
+  const payload = decodeToken(token)
 
-      if (payload.role !== "ADMIN") {
-        router.push("/dashboard")
-      } else {
-        setLoading(false)
-      }
-    }, [])
+  //====token ปลอม / decode====
+  if (!payload) {
+    localStorage.removeItem("token")
+    router.push("/login")
+    return
+  }
+
+  //====role ไม่พอ====
+  if (payload.role !== "ADMIN") {
+    router.push("/dashboard")
+    return
+  }
+
+  setLoading(false)
+}, [])
 
 // ====Edit User====
   const handleUpdateUser = async () => {
@@ -317,8 +329,3 @@ export default function UsersPage() {
 </>
 );
 }
-
-
-// 
-// 
-// 

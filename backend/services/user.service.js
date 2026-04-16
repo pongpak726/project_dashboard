@@ -35,7 +35,8 @@ exports.createUser = async (data) => {
     data: {
       email: data.email,
       name: data.name,
-      password: hashed
+      password: hashed,
+      role: data.role || "USER"
     },
     select: {
       id: true,
@@ -70,6 +71,12 @@ exports.updateUser = async (id, data) => {
 
 // delete
 exports.deleteUser = async (id) => {
+  if (error.code === "P2025") {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  res.status(500).json({ message: "Internal server error" });
+
   return prisma.user.delete({
     where: { id }
   });

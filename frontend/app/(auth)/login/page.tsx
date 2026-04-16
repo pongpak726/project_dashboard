@@ -1,15 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { decodeToken } from "@/app/lib/auth"
 
 export default function LoginPage(){
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const router = useRouter()
     const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
+    const [loading, setLoading] = useState(false)
 
     const handleLogin = async () =>{
+        setLoading(true)
         try{
             const res = await fetch(`${API_URL}/auth/login`,{
                 method: "POST",
@@ -18,6 +21,11 @@ export default function LoginPage(){
                 },
                 body: JSON.stringify({ email,password })
             })
+
+            if (!email || !password) {
+                alert("Please fill all fields")
+                return
+            }
 
             const data = await res.json()
             if (!res.ok) {
@@ -34,8 +42,25 @@ export default function LoginPage(){
         }
         catch (err: any) {
             alert(err.message)
+        }finally {
+            setLoading(false)
         }
     }
+
+    useEffect(() => {
+        const token = localStorage.getItem("token")
+
+        if (!token) return
+
+        const payload = decodeToken(token)
+
+        if (!payload) {
+            localStorage.removeItem("token")
+            return
+        }
+
+        router.push("/dashboard")
+    }, [])
 
     return(
             <div className="flex items-center justify-center min-h-full">
@@ -57,8 +82,9 @@ export default function LoginPage(){
                     onChange={(e) => setPassword(e.target.value)}/>
 
                     <button className="w-full bg-blue-500 text-white py-2 rounded" 
+                    disabled={loading} 
                     onClick={handleLogin}>
-                        Login
+                        {loading ? "Loading..." : "Login"}
                     </button>
 
                 </div>

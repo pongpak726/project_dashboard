@@ -1,12 +1,24 @@
-export const apiClient = async (url: string) => {
-    const token = localStorage.getItem("token")
-    const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
+export const apiClient = async (
+  url: string,
+  options: RequestInit = {}
+) => {
+  const token = localStorage.getItem("token")
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-    const res = await fetch(`${API_URL}${url}`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    })
+  const res = await fetch(`${API_URL}${url}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options.headers
+    }
+  })
 
-    return res.json()
+  const data = await res.json()
+
+  if (!res.ok) {
+    throw new Error(data.message || "API Error")
+  }
+
+  return data
 }

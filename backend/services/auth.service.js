@@ -30,6 +30,10 @@ exports.login = async (data) => {
         where: { email: data.email }
     })
 
+    if (!user.isActive) {
+        throw new Error("User is inactive")
+    }
+
     if (!user) {
         throw new Error("User not found")
     }
