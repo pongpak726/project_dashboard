@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const { hashPassword } = require("../utils/hash")
 
 // get
 exports.getUsers = () => {
@@ -23,12 +24,34 @@ exports.getUserById = (id) => {
 };
 
 // create 
-exports.createUser = (data) => {
-  return prisma.user.create({ data });
-};
+exports.createUser = async (data) => {
+  if (!data.password) {
+    throw new Error("Password is required")
+  }
+
+  const hashed = await hashPassword(data.password || "123456")
+
+  return prisma.user.create({
+    data: {
+      email: data.email,
+      name: data.name,
+      password: hashed
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true
+    }
+  })
+}
 
 //patch
 exports.updateUser = async (id, data) => {
+  if (data.password) {
+    data.password = await hashPassword(data.password)
+  }
+  
   try {
     const user = await prisma.user.update({
       where: { id },
@@ -46,7 +69,7 @@ exports.updateUser = async (id, data) => {
 };
 
 // delete
-exports.deleteUser = (id) => {
+exports.deleteUser = async (id) => {
   return prisma.user.delete({
     where: { id }
   });

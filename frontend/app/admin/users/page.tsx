@@ -16,6 +16,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("")
 
 
  
@@ -39,10 +40,16 @@ export default function UsersPage() {
     if (!selectedUser) return;
 
     try {
-      const updated = await updateUser(selectedUser.id, {
+      const payload: any = {
         email: editEmail,
         name: editName,
-      });
+      };
+
+      if (password) {
+        payload.password = password;
+      }
+
+      const updated = await updateUser(selectedUser.id, payload);
 
       setUsers((prev) =>
         prev.map((u) => (u.id === selectedUser.id ? updated : u))
@@ -59,6 +66,9 @@ export default function UsersPage() {
       // ========
 
       setIsOpen(false);
+      setSelectedUser(null);
+      setEditEmail("");
+      setEditName("");
       
     } catch (error) {
       console.error(error);
@@ -84,16 +94,22 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  // ====Add User====
   const handleAddUser = async () => {
-    if (!email) return alert("Email required");
+      if (!email || !password ) return alert("Email and password required");
 
-    await createUser({ email, name });
+      try{
+      await createUser({ email, name, password });
 
-    setEmail("");
-    setName("");
+      setEmail("");
+      setName("");
+      setPassword("")
 
-    loadUsers();
-  };
+      await loadUsers();
+    } catch (err:any){
+      alert(err.message)
+    }
+  }
   // ========
 
   // ====Delete User====
@@ -124,6 +140,8 @@ export default function UsersPage() {
         showConfirmButton: false,
         backdrop: false,
       });
+
+      loadUsers()
 
     } catch (error) {
       console.error(error);
@@ -159,6 +177,14 @@ export default function UsersPage() {
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+          />
+
+          <input
+            className="w-full mb-3 p-2 border"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
 
           <button

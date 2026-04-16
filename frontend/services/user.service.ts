@@ -16,22 +16,30 @@ export const getUsers = async () => {
 };
 
 export const createUser = async (data: any) => {
+  const token = localStorage.getItem("token")
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(data)
-  });
+  })
 
-  return res.json();
-};
+  if (!res.ok) throw new Error("Failed to add user")
+
+  return res.json()
+}
 
 export const updateUser = async (id: string, data: any) => {
+  const token = localStorage.getItem("token")
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
     },
     body: JSON.stringify(data),
   });
@@ -44,8 +52,13 @@ export const updateUser = async (id: string, data: any) => {
 };
 
 export const deleteUser = async (id: string) => {
+  const token = localStorage.getItem("token")
+
   const res = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
+    headers:{
+      Authorization: `Bearer ${token}`
+    }
   });
 
   const data = await res.json();

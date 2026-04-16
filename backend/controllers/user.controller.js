@@ -19,14 +19,12 @@ exports.getUserById = async (req, res) => {
 
 // POST /users
 exports.createUser = async (req, res) => {
-  const { email, name } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: "Email is required" });
+  try {
+    const user = await userService.createUser(req.body)
+    res.json(user)
+  } catch (err) {
+    res.status(400).json({ message: err.message })
   }
-
-  const user = await userService.createUser({ email, name });
-  res.json(user);
 };
 
 // PUT /users/:id
