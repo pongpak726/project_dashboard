@@ -1,36 +1,50 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getUser } from "@/app/lib/auth"
-import Footer from "@/components/layout/Footer";
-import Navbar from "@/components/layout/Navbar";
+import Navbar from "@/components/layout/Navbar"
+import DashboardNav from "@/components/layout/dashboard"
 
-
-export default function dashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
-}) { 
-    const router = useRouter()
+  children: React.ReactNode
+}) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        const user = getUser()
+  useEffect(() => {
+    const token = localStorage.getItem("token")
 
-        if (!user) {
+    if (!token) {
+      router.push("/login")
+      return
+    }
+
+    // 🔐 optional: validate token (แนะนำ)
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]))
+      if (!payload) {
+        localStorage.removeItem("token")
         router.push("/login")
-        }
-    }, [])
+        return
+      }
+    } catch {
+      localStorage.removeItem("token")
+      router.push("/login")
+      return
+    }
 
-    return (
-        <div className="min-h-screen bg-gray-100 flex flex-col">
-            <Navbar />
+    setLoading(false)
+  }, [])
 
-                <div className="flex-1">
-                    {children}
-                </div>
+  if (loading) return <div>Loading...</div>
 
-            <Footer />
-        </div>
-    );
+  return (
+    <>
+      <Navbar />
+      <DashboardNav />
+      {children}
+    </>
+  )
 }

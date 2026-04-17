@@ -4,6 +4,7 @@ import { useEffect,useState } from "react"
 import { useRouter } from "next/navigation"
 import { getUser } from "@/app/lib/auth"
 import AdminNavbar from "@/components/layout/AdminNavbar";
+import Navbar from "@/components/layout/Navbar";
 
 export default function AdminLayout({
   children,
@@ -39,12 +40,16 @@ export default function AdminLayout({
     }
 
     return (
-        <div className="flex">
-            <AdminNavbar />
+        <>
+            <Navbar/>
+            <div className="flex">
+                
+                <AdminNavbar />
 
-            <main className="flex-1 bg-gray-100 ">
-                {children}
-            </main>
-        </div>
+                <main className="flex-1 bg-gray-100 ">
+                    {children}
+                </main>
+            </div>
+        </>
     );
 }
