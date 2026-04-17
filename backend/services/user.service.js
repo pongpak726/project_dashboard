@@ -19,7 +19,15 @@ exports.getUsers = () => {
 // get by ID
 exports.getUserById = (id) => {
   return prisma.user.findUnique({
-    where: { id }
+    where: { id },
+    select: {
+    id: true,
+    email: true,
+    name: true,
+    role: true,
+    isActive: true,
+    createdAt: true
+  }
   });
 };
 
@@ -29,7 +37,7 @@ exports.createUser = async (data) => {
     throw new Error("Password is required")
   }
 
-  const hashed = await hashPassword(data.password || "123456")
+  const hashed = await hashPassword(data.password)
 
   return prisma.user.create({
     data: {
@@ -48,36 +56,102 @@ exports.createUser = async (data) => {
 }
 
 //patch
-exports.updateUser = async (id, data) => {
-  if (data.password) {
-    data.password = await hashPassword(data.password)
-  }
-  
-  try {
-    const user = await prisma.user.update({
-      where: { id },
-      data, 
-    });
+exports.updateUser = async (id, data, currentUser) => {
+  const existingUser = await prisma.user.findUnique({
+    where: { id }
+  })
 
-    return user;
-  } catch (error) {
-    // Prisma error: P2025 = not found
-    if (error.code === "P2025") {
-      throw new Error("User not found");
-    }
-    throw error;
+  if (!existingUser) {
+    throw new Error("User not found")
   }
-};
+
+  let updateData = {}
+
+  // ===== ROLE FILTER =====
+  let allowed = []
+
+  if (currentUser.role === "ADMIN") {
+    allowed = ["email", "name", "password", "role"]
+  } else if (currentUser.role === "SUPER_ADMIN") {
+    allowed = ["email", "name", "password", "role", "isActive"]
+  } else {
+    throw new Error("Forbidden")
+  }
+
+  // ===== PATCH LOGIC =====
+  for (const key of allowed) {
+    if (
+      data[key] !== undefined &&
+      data[key] !== existingUser[key]
+    ) {
+      updateData[key] = data[key]
+    }
+  }
+
+  // ===== ROLE SECURITY =====
+  const rolePriority = {
+    USER: 1,
+    ADMIN: 2,
+    SUPER_ADMIN: 3
+  }
+
+  if (updateData.role) {
+    if (rolePriority[updateData.role] > rolePriority[currentUser.role]) {
+      throw new Error("Cannot assign higher role than yourself")
+    }
+  }
+
+  if (
+    currentUser.role === "ADMIN" &&
+    updateData.role === "SUPER_ADMIN"
+  ) {
+    throw new Error("Not allowed to assign SUPER_ADMIN role")
+  }
+
+  // ===== NO CHANGE =====
+  if (Object.keys(updateData).length === 0) {
+    return existingUser
+  }
+
+  // ===== HASH PASSWORD =====
+  if (updateData.password) {
+    updateData.password = await hashPassword(updateData.password)
+  }
+
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data: updateData,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true
+      }
+    })
+  } catch (error) {
+    if (error.code === "P2002") {
+      throw new Error("Email already exists")
+    }
+    if (error.code === "P2025") {
+      throw new Error("User not found")
+    }
+    throw error
+  }
+}
 
 // delete
 exports.deleteUser = async (id) => {
-  if (error.code === "P2025") {
-    return res.status(404).json({ message: "User not found" });
+  try {
+    return await prisma.user.delete({
+      where: { id }
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      throw new Error("User not found")
+    }
+
+    throw error
   }
-
-  res.status(500).json({ message: "Internal server error" });
-
-  return prisma.user.delete({
-    where: { id }
-  });
 };
