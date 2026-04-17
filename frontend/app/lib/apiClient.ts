@@ -17,6 +17,11 @@ export const apiClient = async (
   const data = await res.json()
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token")
+      window.location.href = "/login"
+    }
+
     throw new Error(data.message || "API Error")
   }
 

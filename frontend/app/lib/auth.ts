@@ -7,7 +7,7 @@ export const decodeToken = (token: string) => {
 
     const payload = JSON.parse(atob(base64))
 
-    // 🔥 check expire
+    //====check expire====
     if (payload.exp * 1000 < Date.now()) return null
 
     return payload

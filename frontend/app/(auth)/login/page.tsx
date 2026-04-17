@@ -14,6 +14,11 @@ export default function LoginPage(){
     const handleLogin = async () =>{
         setLoading(true)
         try{
+            if (!email || !password) {
+                alert("Please fill all fields")
+                return
+            }
+
             const res = await fetch(`${API_URL}/auth/login`,{
                 method: "POST",
                 headers: {
@@ -22,14 +27,9 @@ export default function LoginPage(){
                 body: JSON.stringify({ email,password })
             })
 
-            if (!email || !password) {
-                alert("Please fill all fields")
-                return
-            }
-
             const data = await res.json()
             if (!res.ok) {
-                throw new Error(data.message || "Login failed")
+                throw new Error("Login failed")
             }
 
             if (!data.token) {
