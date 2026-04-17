@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect,useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { getUser } from "@/app/lib/auth"
 import AdminNavbar from "@/components/layout/AdminNavbar";
 import Navbar from "@/components/layout/Navbar";
@@ -13,6 +13,7 @@ export default function AdminLayout({
 }) { 
     const router = useRouter()
     const [allowed, setAllowed] = useState(false)
+    const pathname = usePathname()
 
     useEffect(() => {
         const user = getUser()
@@ -29,7 +30,7 @@ export default function AdminLayout({
 
         
         setAllowed(true)
-    }, [])
+    }, [pathname])
 
     if (!allowed) {
         return (

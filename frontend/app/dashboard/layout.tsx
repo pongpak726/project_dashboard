@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Navbar from "@/components/layout/Navbar"
 import DashboardNav from "@/components/layout/dashboard"
+import { getUser } from "../lib/auth"
 
 export default function DashboardLayout({
   children,
@@ -12,31 +13,19 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const pathname = usePathname()
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
+    const user = getUser()
 
-    if (!token) {
+    if (!user) {
       router.push("/login")
       return
     }
 
-    // 🔐 optional: validate token (แนะนำ)
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]))
-      if (!payload) {
-        localStorage.removeItem("token")
-        router.push("/login")
-        return
-      }
-    } catch {
-      localStorage.removeItem("token")
-      router.push("/login")
-      return
-    }
 
     setLoading(false)
-  }, [])
+  }, [pathname])
 
   if (loading) return <div>Loading...</div>
 
