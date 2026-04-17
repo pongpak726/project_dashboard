@@ -44,13 +44,15 @@ exports.createUser = async (data) => {
       email: data.email,
       name: data.name,
       password: hashed,
-      role: data.role || "USER"
+      role: data.role || "USER",
+      isActive: data.isActive ?? true 
     },
     select: {
       id: true,
       email: true,
       name: true,
-      role: true
+      role: true,
+      isActive: true
     }
   })
 }
@@ -71,7 +73,7 @@ exports.updateUser = async (id, data, currentUser) => {
   let allowed = []
 
   if (currentUser.role === "ADMIN") {
-    allowed = ["email", "name", "password", "role"]
+    allowed = ["email", "name", "password", "role", "isActive"]
   } else if (currentUser.role === "SUPER_ADMIN") {
     allowed = ["email", "name", "password", "role", "isActive"]
   } else {

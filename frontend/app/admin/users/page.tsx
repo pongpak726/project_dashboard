@@ -21,13 +21,19 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("")
+  const [password, setPassword] = useState("")//==create==
   const [role, setRole] = useState("USER")
   const [isActive, setIsActive] = useState(true)
+  const [editPassword, setEditPassword] = useState("")//==update==
+  
   
 
   //====Role Check====
-  const currentUser = getUser()
+  const [currentUser, setCurrentUser] = useState<any>(null)
+
+  useEffect(() => {
+  setCurrentUser(getUser())
+}, [])
  
 //==== modal ===== 
   const [isOpen, setIsOpen] = useState(false);
@@ -62,10 +68,9 @@ export default function UsersPage() {
         isActive: editIsActive
       };
 
-      console.log(payload)
 
-      if (password) {
-        payload.password = password;
+      if (editPassword) {
+        payload.password = editPassword;
       }
 
       const updated = await updateUser(selectedUser.id, payload);
@@ -86,8 +91,7 @@ export default function UsersPage() {
 
       setIsOpen(false);
       setSelectedUser(null);
-      setEditEmail("");
-      setEditName("");
+      
       
     } catch (error) {
       console.error(error);
@@ -138,6 +142,13 @@ const router = useRouter()
       setIsActive(true)
 
       await loadUsers();
+
+      await Swal.fire({
+        title: "User created!",
+        icon: "success",
+        timer: 1200,
+        showConfirmButton: false,
+      })
     } catch (err:any){
       alert(err.message)
     }
@@ -224,7 +235,7 @@ const router = useRouter()
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {currentUser?.role !== "USER" && (
+          {(currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN") && (
             <>
               <select
                 className="w-full border p-2 rounded"
@@ -233,7 +244,9 @@ const router = useRouter()
               >
                 <option value="USER">USER</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                {currentUser?.role === "SUPER_ADMIN" && (
+                  <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                )}
               </select>
 
               <label className="flex items-center gap-2">
@@ -330,7 +343,7 @@ const router = useRouter()
         placeholder="Name"
       />
 
-      {currentUser?.role !== "USER" && (
+      {(currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN") && (
         <>
           <select
             className="w-full border p-2 rounded"
@@ -339,7 +352,9 @@ const router = useRouter()
           >
             <option value="USER">USER</option>
             <option value="ADMIN">ADMIN</option>
-            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+            {currentUser?.role === "SUPER_ADMIN" && (
+              <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+            )}
           </select>
 
           <label className="flex items-center gap-2">
