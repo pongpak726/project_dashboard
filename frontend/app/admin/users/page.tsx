@@ -21,10 +21,9 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [password, setPassword] = useState("")//==create==
+  const [password, setPassword] = useState("")
   const [role, setRole] = useState("USER")
   const [isActive, setIsActive] = useState(true)
-  const [editPassword, setEditPassword] = useState("")//==update==
   
   
 
@@ -69,9 +68,6 @@ export default function UsersPage() {
       };
 
 
-      if (editPassword) {
-        payload.password = editPassword;
-      }
 
       const updated = await updateUser(selectedUser.id, payload);
 
