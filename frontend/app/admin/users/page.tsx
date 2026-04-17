@@ -4,14 +4,8 @@ import { useEffect, useState } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
-import { decodeToken } from "@/app/lib/auth";
 
 export default function UsersPage() {
-  // ====redirect====
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-
-  
   // ====Declare====
   type User = {
   id: string;
@@ -24,6 +18,7 @@ export default function UsersPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("")
+  
 
 
  
@@ -42,34 +37,7 @@ export default function UsersPage() {
   };
 // ========
 
-// ====auth====
-  useEffect(() => {
-  const token = localStorage.getItem("token")
 
-  //====ไม่มี token=====
-  if (!token) {
-    router.push("/login")
-    return
-  }
-
-  //====decode====
-  const payload = decodeToken(token)
-
-  //====token ปลอม / decode====
-  if (!payload) {
-    localStorage.removeItem("token")
-    router.push("/login")
-    return
-  }
-
-  //====role ไม่พอ====
-  if (payload.role !== "ADMIN") {
-    router.push("/dashboard")
-    return
-  }
-
-  setLoading(false)
-}, [])
 
 // ====Edit User====
   const handleUpdateUser = async () => {
@@ -119,12 +87,26 @@ export default function UsersPage() {
     }
   };
 // ========
+
+const router = useRouter()
   
 // ====Get User====
   const loadUsers = async () => {
-    const data = await getUsers();
-    setUsers(data);
-  };
+    
+    try {
+      const data = await getUsers()
+      setUsers(data)
+    } catch (err: any) {
+      console.error(err)
+
+      //====handle auth error====
+      if (err.message === "Forbidden") {
+        router.push("/dashboard")
+      } else {
+        alert("Failed to load users")
+      }
+    }
+  }
 
 
   // ====Add User====
@@ -190,17 +172,10 @@ export default function UsersPage() {
     }
   };
   // ========
-
-
     
-  // ====redirect====
   useEffect(() => {
-    if (!loading) {
-      loadUsers()
-    }
-  }, [loading])
-
-  if (loading) return <div>Loading...</div>
+    loadUsers()
+  }, [])
 
 
   return (
