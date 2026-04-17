@@ -10,6 +10,7 @@ export default function LoginPage(){
     const router = useRouter()
     const API_URL = `${process.env.NEXT_PUBLIC_API_URL}`;
     const [loading, setLoading] = useState(false)
+    
 
     const handleLogin = async () =>{
         setLoading(true)
@@ -59,7 +60,11 @@ export default function LoginPage(){
             return
         }
 
-        router.push("/dashboard")
+        if (payload.role === "ADMIN" || payload.role === "SUPER_ADMIN") {
+            router.push("/admin/dashboard")
+            } else {
+            router.push("/dashboard")
+        }
     }, [])
 
     return(

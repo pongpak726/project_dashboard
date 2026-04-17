@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 export default function AdminNavbar() {
     const router = useRouter()
@@ -16,8 +17,8 @@ export default function AdminNavbar() {
                 <h2 className="font-bold mb-4">Admin</h2>
 
                 <ul className="space-y-2">
-                <li onClick={() => router.push("/dashboard")}>Dashboard</li>
-                <li onClick={() => router.push("/admin/users")}>Users</li>
+                    <li><Link href="/admin/dashboard">Dashboard</Link></li>
+                    <li><Link href="/admin/users">Users</Link></li>
                 </ul>
             </div>
 

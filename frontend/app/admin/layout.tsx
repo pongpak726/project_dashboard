@@ -23,14 +23,20 @@ export default function AdminLayout({
 
         if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
         router.push("/dashboard")
-        return
+        return 
         }
 
         
         setAllowed(true)
     }, [])
 
-    if (!allowed) return null
+    if (!allowed) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+            <p>Checking permission...</p>
+            </div>
+        )
+    }
 
     return (
         <div className="flex">
