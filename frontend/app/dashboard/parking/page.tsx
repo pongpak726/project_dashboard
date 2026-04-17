@@ -1,3 +1,3 @@
 export default function ParkingPage() {
-  return <div>Parking</div>
+  return <div className="text-black text-center font-bold text-2xl pt-2">Parking</div>
 }
