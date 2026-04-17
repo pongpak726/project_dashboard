@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
+import { getUsers, createUser, updateUser, deleteUser } from "../../lib/services/user";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/app/lib/auth";
