@@ -26,30 +26,28 @@ exports.register = async (data) => {
 }
 
 exports.login = async (data) => {
-    const user = await prisma.user.findUnique({
-        where: { email: data.email }
-    })
+  const user = await prisma.user.findUnique({
+    where: { email: data.email }
+  })
 
-    if (!user.isActive) {
-        throw new Error("User is inactive")
-    }
+  if (!user) {
+    throw new Error("User not found")
+  }
 
-    if (!user) {
-        throw new Error("User not found")
-    }
+  if (!user.isActive) {
+    throw new Error("User is inactive")
+  }
 
-    const isMatch = await comparePassword(data.password, user.password)
+  const isMatch = await comparePassword(data.password, user.password)
 
-    if (!isMatch) {
-        throw new Error("Invalid password")
-    }
+  if (!isMatch) {
+    throw new Error("Invalid password")
+  }
 
-    const token = generateToken({
-        id: user.id,
-        role: user.role
-    })
+  const token = generateToken({
+    id: user.id,
+    role: user.role
+  })
 
-    return {
-        token
-    }
+  return { token }
 }
