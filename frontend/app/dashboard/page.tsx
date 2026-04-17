@@ -8,7 +8,7 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-black text-center font-bold text-2xl pt-2">
-        Dashboard
+        Dashboard Summary
       </h1>
     </div>
   )
