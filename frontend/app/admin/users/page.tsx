@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { getUsers, createUser, updateUser, deleteUser } from "../../../services/user.service";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { getUser } from "@/app/lib/auth";
+import { getRoleBadge,getStatusBadge } from "@/app/lib/badge";
 
 export default function UsersPage() {
   // ====Declare====
@@ -11,6 +13,8 @@ export default function UsersPage() {
   id: string;
   email: string;
   name: string;
+  role: string;
+  isActive: boolean;
 };
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -18,21 +22,28 @@ export default function UsersPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("")
+  const [role, setRole] = useState("USER")
+  const [isActive, setIsActive] = useState(true)
   
 
-
+  //====Role Check====
+  const currentUser = getUser()
  
 //==== modal ===== 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editEmail, setEditEmail] = useState("");
   const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("USER");
+  const [editIsActive, setEditIsActive] = useState(true);
   const [isClosing, setIsClosing] = useState(false);
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
     setEditEmail(user.email);
     setEditName(user.name);
+    setEditRole(user.role);
+    setEditIsActive(user.isActive);
     setIsOpen(true);
   };
 // ========
@@ -47,7 +58,11 @@ export default function UsersPage() {
       const payload: any = {
         email: editEmail,
         name: editName,
+        role: editRole,
+        isActive: editIsActive
       };
+
+      console.log(payload)
 
       if (password) {
         payload.password = password;
@@ -114,11 +129,13 @@ const router = useRouter()
       if (!email || !password ) return alert("Email and password required");
 
       try{
-      await createUser({ email, name, password });
+      await createUser({ email,name,password,role,isActive});
 
       setEmail("");
       setName("");
       setPassword("")
+      setRole("USER")
+      setIsActive(true)
 
       await loadUsers();
     } catch (err:any){
@@ -207,6 +224,29 @@ const router = useRouter()
             onChange={(e) => setPassword(e.target.value)}
           />
 
+          {currentUser?.role !== "USER" && (
+            <>
+              <select
+                className="w-full border p-2 rounded"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+              </select>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                />
+                Active
+              </label>
+            </>
+          )}
+
           <button
             onClick={handleAddUser}
             className="bg-blue-500 text-white py-2 rounded w-full"
@@ -221,11 +261,28 @@ const router = useRouter()
 
         <div className="space-y-3">
           {users.map((user) => (
-            <div key={user.id} className="bg-white p-4 rounded shadow flex">
-              <div className="flex-2">
-              <p>{user.email}</p>
-              <p>{user.name}</p>
+            <div key={user.id} className="bg-white p-4 rounded shadow flex justify-between items-center">
+              <div className="flex flex-col">
+                <p className="font-semibold">{user.email}</p>
+                <p className="text-sm text-gray-500">{user.name}</p>
+
+                <div className="flex gap-2 mt-2">
+                  {/* ROLE */}
+                  <span
+                    className={`px-2 py-1 text-xs rounded ${getRoleBadge(user.role)}`}
+                  >
+                    {user.role}
+                  </span>
+
+                  {/* STATUS */}
+                  <span
+                    className={`px-2 py-1 text-xs rounded ${getStatusBadge(user.isActive)}`}
+                  >
+                    {user.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
               </div>
+              
               <div className="flex gap-2">
                 <button
                   onClick={()=>openEditModal(user)}
@@ -272,6 +329,29 @@ const router = useRouter()
         onChange={(e) => setEditName(e.target.value)}
         placeholder="Name"
       />
+
+      {currentUser?.role !== "USER" && (
+        <>
+          <select
+            className="w-full border p-2 rounded"
+            value={editRole}
+            onChange={(e) => setEditRole(e.target.value)}
+          >
+            <option value="USER">USER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+          </select>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={editIsActive}
+              onChange={(e) => setEditIsActive(e.target.checked)}
+            />
+            Active
+          </label>
+        </>
+      )}
 
       <div className="flex justify-end gap-2">
 
