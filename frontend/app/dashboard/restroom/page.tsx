@@ -1,35 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getWeather } from "@/app/lib/services/external"
-import { tr } from "zod/locales";
+import { getRestroom } from "@/app/lib/services/external"
 
-
-function PM25Badge({ value }: { value: number }) {
-  const color =
-    value <= 25
-      ? "bg-green-100 text-green-800"
-      : value <= 50
-      ? "bg-yellow-300 text-yellow-900"
-      : "bg-red-400 text-red-900";
-  return (
-    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${color}`}>
-      {value} μg/m³
-    </span>
-  );
+type Restroom = {
+  siteName: string
+  deviceId: string
+  maleStalls: number
+  maleAvailable: number
+  femaleStalls: number
+  femaleAvailable: number
+  timestamp: string
 }
 
 export default function RestroomPage() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Restroom[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getWeather()
-        setData(res.data) // 🔥 สำคัญ
+        const res = await getRestroom()
+        setData(res.data)
       } catch (err) {
-        console.error(err)
+        console.error("LOAD ERROR:", err)
       } finally {
         setLoading(false)
       }
@@ -37,42 +31,66 @@ export default function RestroomPage() {
 
     load()
   }, [])
+  // ===== Loading =====
+  if (loading) {
+    return <p className="p-6">Loading...</p>
+  }
 
-  if (loading) return <p>Loading...</p>
+  // ===== No Data =====
+  if (data.length === 0) {
+    return <p className="p-6 text-black">No restroom data</p>
+  }
 
-  if (data.length === 0) return <p className="text-black">No data</p>
   return (
-    <div className="text-black">
-  <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200 mt-4 mx-4">
-    <table className="w-full text-sm border-collapse">
-      <thead>
-        <tr className="border-b border-gray-200 bg-blue-500">
-          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Location</th>
-          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Device</th>
-          <th className="text-left text-lg px-4 py-2 font-semibold text-white">status</th>
-          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Update time</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((item: any) => (
-          <tr key={`${item.deviceId}-${item.timestamp}`} className="border-b border-gray-100">
-            <td className="px-4 py-3">📍 {item.location}</td>
-            <td className="px-4 py-3">
-              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                {item.deviceId}
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold text-black">Restroom</h1>
+
+      {/* 🔥 Grid layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {data.map((item, index) => (
+          <div
+            key={`${item.deviceId}-${item.timestamp}-${index}`}
+            className="bg-white p-4 rounded shadow text-black"
+          >
+            {/* 📍 Location */}
+            <p className="font-semibold text-lg">
+              📍 {item.siteName}
+            </p>
+
+            {/* 🚹 Male */}
+            <p>
+              🚹 Male: {item.maleAvailable} / {item.maleStalls}
+            </p>
+
+            {/* 🚺 Female */}
+            <p>
+              🚺 Female: {item.femaleAvailable} / {item.femaleStalls}
+            </p>
+{/* 🧠 Status */}
+            <p className="mt-2">
+              Status:{" "}
+              <span
+                className={
+                  item.maleAvailable === 0 &&
+                  item.femaleAvailable === 0
+                    ? "text-red-500 font-bold"
+                    : "text-green-500 font-bold"
+                }
+              >
+                {item.maleAvailable === 0 &&
+                item.femaleAvailable === 0
+                  ? "FULL"
+                  : "AVAILABLE"}
               </span>
-            </td>
-            <td className="px-4 py-3">
-              <PM25Badge value={item.pm25} />
-            </td>
-            <td className="px-4 py-3">🌡 {item.temperature} °C</td>
-            <td className="px-4 py-3">💧 {item.humidity} %</td>
-            <td className="px-4 py-3 text-gray-400 text-xs">🕒 {item.timestamp}</td>
-          </tr>
+            </p>
+
+            {/* 🕒 Time */}
+            <p className="text-sm text-gray-500 mt-2">
+              🕒 {item.timestamp}
+            </p>
+          </div>
         ))}
-      </tbody>
-    </table>
-  </div>
-</div>
-  );
+      </div>
+    </div>
+  )
 }

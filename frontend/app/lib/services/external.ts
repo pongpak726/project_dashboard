@@ -5,7 +5,7 @@ export const getWeather = () =>
 
 // ถ้ามีหลาย API
 // export const getParking = () =>
-//   apiClient("/parking")
+//   apiClient("/dashboard/parking")
 
-// export const getRestroom = () =>
-//   apiClient("/restroom")
+ export const getRestroom = () =>
+   apiClient("/dashboard/restroom")
