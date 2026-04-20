@@ -5,7 +5,7 @@ const cors = require("cors");
 const userRoute = require("./routes/user.route");
 const authRoutes = require("./routes/auth.routes")
 const errorHandler = require("./middleware/error");
-const weatherRoutes = require("./routes/external.route")
+const weatherRoutes = require("./routes/external.routes")
 
 // middleware
 app.use(express.json());
@@ -14,7 +14,7 @@ app.use(cors());
 
 app.use("/api/users", userRoute);
 app.use("/api/auth",authRoutes) ;
-app.use("/api/dashbaord", weatherRoutes);
+app.use("/api/dashboard", weatherRoutes);
 
 // health check
 app.get("/", (req, res) => {

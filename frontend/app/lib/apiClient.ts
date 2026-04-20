@@ -14,6 +14,8 @@ export const apiClient = async (
     }
   })
 
+  console.log("FINAL URL:", `${API_URL}${url}`)
+
   const data = await res.json()
 
   if (!res.ok) {
