@@ -22,7 +22,7 @@ exports.getWeather = async ({ site = "bangkok_01", limit = 10 }) => {
 }
 
 
-exports.getRestroom = async ({ site = "Sikhio-Inbound" , limit = 10 }) => {
+exports.getRestroom = async ({ site = "Rest Area KM 120" , limit = 10 }) => {
   const params = { limit }
 
   if (site) {

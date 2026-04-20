@@ -32,3 +32,22 @@ exports.getRestroom = async (req, res, next) => {
     next(err)
   }
 }
+
+exports.getOverview = async (req, res, next) => {
+  try {
+    const [weather, restroom] = await Promise.all([
+      externalService.getWeather({}),
+      externalService.getRestroom({})
+    ])
+
+    res.json({
+      success: true,
+      data: {
+        weather,
+        restroom
+      }
+    })
+  } catch (err) {
+    next(err)
+  }
+}
