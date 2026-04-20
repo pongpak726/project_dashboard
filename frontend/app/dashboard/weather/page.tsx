@@ -1,22 +1,9 @@
-type StationData = {
-  id: string;
-  device: string;
-  pm25: number;
-  temperature: number;
-  humidity: number;
-  updatedAt: string;
-};
+"use client"
 
-const data: StationData[] = [
-  {
-    id: "bangkok_01",
-    device: "weather-station-001",
-    pm25: 44,
-    temperature: 37.5,
-    humidity: 42,
-    updatedAt: "20/4/2569 14:00:01",
-  },
-];
+import { useEffect, useState } from "react"
+import { getWeather } from "@/app/lib/services/external"
+import { tr } from "zod/locales";
+
 
 function PM25Badge({ value }: { value: number }) {
   const color =
@@ -34,42 +21,61 @@ function PM25Badge({ value }: { value: number }) {
 
 
 export default function WeatherPage() {
-  return (
-    <div className="text-black text-[100px]">
-      {/* <div className="text-center font-bold text-2xl pt-2 pb-4">Weather</div> */}
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-      <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200 mt-4 mx-4">
-        <table className="w-full text-sm border-collapse">
-          <thead >
-            <tr className="border-b border-gray-200 bg-blue-500 ">
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">Location</th>
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">Device</th>
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">PM2.5</th>
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">Temperature</th>
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">Humidity</th>
-              <th className="text-left text-lg px-4 py-2 font-semibold text-white">Update time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.id} className="border-b border-gray-100">
-                <td className="px-4 py-3 font-medium">{row.id}</td>
-                <td className="px-4 py-3">
-                  <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                    {row.device}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <PM25Badge value={row.pm25} />
-                </td>
-                <td className="px-4 py-3">{row.temperature.toFixed(2)}°C</td>
-                <td className="px-4 py-3">{row.humidity}%</td>
-                <td className="px-4 py-3 text-gray-400 text-xs">{row.updatedAt}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await getWeather()
+        setData(res.data) // 🔥 สำคัญ
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [])
+
+  if (loading) return <p>Loading...</p>
+
+  if (data.length === 0) return <p className="text-black">No data</p>
+  return (
+    <div className="text-black">
+  <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200 mt-4 mx-4">
+    <table className="w-full text-sm border-collapse">
+      <thead>
+        <tr className="border-b border-gray-200 bg-blue-500">
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Location</th>
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Device</th>
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">PM2.5</th>
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Temperature</th>
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Humidity</th>
+          <th className="text-left text-lg px-4 py-2 font-semibold text-white">Update time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((item: any) => (
+          <tr key={`${item.deviceId}-${item.timestamp}`} className="border-b border-gray-100">
+            <td className="px-4 py-3">📍 {item.location}</td>
+            <td className="px-4 py-3">
+              <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                {item.deviceId}
+              </span>
+            </td>
+            <td className="px-4 py-3">
+              <PM25Badge value={item.pm25} />
+            </td>
+            <td className="px-4 py-3">🌡 {item.temperature} °C</td>
+            <td className="px-4 py-3">💧 {item.humidity} %</td>
+            <td className="px-4 py-3 text-gray-400 text-xs">🕒 {item.timestamp}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
   );
 }

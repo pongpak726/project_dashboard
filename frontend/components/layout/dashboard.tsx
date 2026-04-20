@@ -2,9 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 
 export default function DashboardNav() {
   const pathname = usePathname()
+  const [open, setOpen] = useState(false)
 
   const menus = [
     { name: "Overview", href: "/dashboard" },
@@ -13,25 +15,37 @@ export default function DashboardNav() {
     { name: "Restroom", href: "/dashboard/restroom" },
   ]
 
-  return (
-    <div className="flex gap-4 p-4 border-b bg-white">
-      {menus.map((menu) => {
-        const isActive = pathname === menu.href
+  const activeMenu = menus.find((menu) => menu.href === pathname)
 
-        return (
-          <Link
-            key={menu.href}
-            href={menu.href}
-            className={`px-3 py-1 rounded ${
-              isActive
-                ? "bg-blue-500 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            {menu.name}
-          </Link>
-        )
-      })}
+  return (
+    <div className="relative p-4 border-b">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        {activeMenu?.name ?? "Menu"}
+        <span>{open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="absolute mt-1 bg-white border border-gray-200 rounded shadow-md z-10">
+          {menus.map((menu) => {
+            const isActive = pathname === menu.href
+            return (
+              <Link
+                key={menu.href}
+                href={menu.href}
+                onClick={() => setOpen(false)}
+                className={`block px-6 py-2 hover:bg-gray-100 ${
+                  isActive ? "text-blue-500 font-medium" : "text-gray-600"
+                }`}
+              >
+                {menu.name}
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

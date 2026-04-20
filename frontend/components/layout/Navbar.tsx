@@ -21,9 +21,9 @@ export default function Navbar() {
 
   return (
     <nav className="flex justify-between items-center p-4 bg-white text-black">
-      <Link href="/" className="font-bold text-xl">Home</Link>
+      <Link href="/" className="font-bold text-xl ml-4 ">Home</Link>
 
-      <div className="flex gap-16 bg-black text-white">
+      <div className="flex gap-16 text-black mr-4">
         {user ? (
           <>
             <Link href="/dashboard">Dashboard</Link>
