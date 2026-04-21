@@ -60,8 +60,7 @@ export default function RestroomPage() {
             <p className="text-sm text-gray-400">
               🆔 Device: {item.deviceId}
             </p>
-
-            {/* 🚹 Male */}
+{/* 🚹 Male */}
             <p>
               🚹 Male: {item.maleAvailable} / {item.maleStalls}
             </p>
