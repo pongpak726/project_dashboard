@@ -15,9 +15,9 @@ exports.getWeather = async ({ site = "bangkok_01", limit = 10 }) => {
   return data.data.map(item => ({
     location: item.site_name,
     deviceId: item.device_id,
-    temperature: item.temp_c,
-    humidity: item.humidity_pct,
-    pm25: item.pm25_ugm3,
+    temperature: Number(item.temp_c),
+    humidity: Number(item.humidity_pct),
+    pm25: Number(item.pm25_ugm3),
     timestamp: item.created_at
   }))
 }
