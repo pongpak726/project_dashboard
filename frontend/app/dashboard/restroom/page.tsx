@@ -58,6 +58,10 @@ export default function RestroomPage() {
               📍 {item.siteName}
             </p>
 
+            <p className="text-sm text-gray-400">
+              🆔 Device: {item.deviceId}
+            </p>
+
             {/* 🚹 Male */}
             <p>
               🚹 Male: {item.maleAvailable} / {item.maleStalls}
