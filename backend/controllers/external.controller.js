@@ -6,10 +6,14 @@ exports.getWeather = async (req, res, next) => {
 
     const data = await externalService.getWeather({
       site,
-      limit
+      limit: Number(limit)
     })
 
-    res.json({ success: true, data })
+    res.json({
+      success: true,
+      message: "Weather retrieved successfully",
+      data
+    })
   } catch (err) {
     next(err)
   }
@@ -21,11 +25,12 @@ exports.getRestroom = async (req, res, next) => {
 
     const data = await externalService.getRestroom({
       site,
-      limit
+      limit: Number(limit)
     })
 
     res.json({
       success: true,
+      message: "Restroom retrieved successfully",
       data
     })
   } catch (err) {
@@ -35,13 +40,16 @@ exports.getRestroom = async (req, res, next) => {
 
 exports.getOverview = async (req, res, next) => {
   try {
+    const { site, limit } = req.query
+
     const [weather, restroom] = await Promise.all([
-      externalService.getWeather({}),
-      externalService.getRestroom({})
+      externalService.getWeather({ site, limit: Number(limit) }),
+      externalService.getRestroom({ site, limit: Number(limit) })
     ])
 
     res.json({
       success: true,
+      message: "Overview retrieved successfully",
       data: {
         weather,
         restroom

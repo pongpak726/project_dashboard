@@ -7,3 +7,8 @@ router.get("/restroom", controller.getRestroom)
 router.get("/overview", controller.getOverview)
 
 module.exports = router
+
+// รอ update 
+// 1. prefix version (production)
+// 2. validation
+// 
