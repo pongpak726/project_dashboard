@@ -32,8 +32,12 @@ export default function DashboardLayout({
   return (
     <>
       <Navbar />
-      <DashboardNav />
-      {children}
+      <div className="flex">
+  <DashboardNav />
+  <main className="flex-1">
+    {children}
+  </main>
+</div>
     </>
   )
 }

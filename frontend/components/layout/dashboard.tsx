@@ -2,50 +2,51 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { MdOutlineSpaceDashboard } from "react-icons/md"
+import { WiDaySunny } from "react-icons/wi"
+import { MdLocalParking } from "react-icons/md"
+import { MdWc } from "react-icons/md"
 
 export default function DashboardNav() {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
 
   const menus = [
-    { name: "Overview", href: "/dashboard" },
-    { name: "Weather", href: "/dashboard/weather" },
-    { name: "Parking", href: "/dashboard/parking" },
-    { name: "Restroom", href: "/dashboard/restroom" },
+    { name: "Overview",  href: "/dashboard",          icon: <MdOutlineSpaceDashboard size={24} /> },
+    { name: "Weather",   href: "/dashboard/weather",  icon: <WiDaySunny size={24} /> },
+    { name: "Parking",   href: "/dashboard/parking",  icon: <MdLocalParking size={24} /> },
+    { name: "Restroom",  href: "/dashboard/restroom", icon: <MdWc size={24} /> },
   ]
 
-  const activeMenu = menus.find((menu) => menu.href === pathname)
+  const navLinkClass = (href: string) => {
+    const isActive = pathname === href
+    return `flex items-center gap-2 text-lg px-2 py-2 rounded transition-colors duration-150
+      ${isActive
+        ? "bg-gray-600 text-white font-semibold"
+        : "hover:bg-gray-700"
+      }`
+  }
 
   return (
-    <div className="relative p-4 border-b">
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded"
-      >
-        {activeMenu?.name ?? "Menu"}
-        <span>{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <div className="absolute mt-1 bg-white border border-gray-200 rounded shadow-md z-10">
-          {menus.map((menu) => {
-            const isActive = pathname === menu.href
-            return (
-              <Link
-                key={menu.href}
-                href={menu.href}
-                onClick={() => setOpen(false)}
-                className={`block px-6 py-2 hover:bg-gray-100 ${
-                  isActive ? "text-blue-500 font-medium" : "text-gray-600"
-                }`}
-              >
+    <aside className="
+      group
+      w-18 hover:w-64
+      h-screen sticky top-0
+      bg-gray-800 text-white p-4
+      flex flex-col justify-between
+      transition-all duration-300 overflow-hidden
+    ">
+      <ul className="space-y-2">
+        {menus.map((menu) => (
+          <li key={menu.href}>
+            <Link href={menu.href} className={navLinkClass(menu.href)}>
+              <span className="shrink-0">{menu.icon}</span>
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                 {menu.name}
-              </Link>
-            )
-          })}
-        </div>
-      )}
-    </div>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </aside>
   )
 }

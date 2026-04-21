@@ -28,72 +28,61 @@ export default function RestroomPage() {
         setLoading(false)
       }
     }
-
     load()
   }, [])
-  // ===== Loading =====
-  if (loading) {
-    return <p className="p-6">Loading...</p>
-  }
 
-  // ===== No Data =====
-  if (data.length === 0) {
-    return <p className="p-6 text-black">No restroom data</p>
-  }
+  if (loading) return <p className="p-6">Loading...</p>
+  if (data.length === 0) return <p className="p-6 text-black">No restroom data</p>
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold text-black">Restroom</h1>
+    <div className="p-6">
+      
 
-      {/* 🔥 Grid layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data.map((item, index) => (
-          <div
-            key={`${item.deviceId}-${item.timestamp}-${index}`}
-            className="bg-white p-4 rounded shadow text-black"
-          >
-            {/* 📍 Location */}
-            <p className="font-semibold text-lg">
-              📍 {item.siteName}
-            </p>
-
-            <p className="text-sm text-gray-400">
-              🆔 Device: {item.deviceId}
-            </p>
-
-            {/* 🚹 Male */}
-            <p>
-              🚹 Male: {item.maleAvailable} / {item.maleStalls}
-            </p>
-
-            {/* 🚺 Female */}
-            <p>
-              🚺 Female: {item.femaleAvailable} / {item.femaleStalls}
-            </p>
-{/* 🧠 Status */}
-            <p className="mt-2">
-              Status:{" "}
-              <span
-                className={
-                  item.maleAvailable === 0 &&
-                  item.femaleAvailable === 0
-                    ? "text-red-500 font-bold"
-                    : "text-green-500 font-bold"
-                }
-              >
-                {item.maleAvailable === 0 &&
-                item.femaleAvailable === 0
-                  ? "FULL"
-                  : "AVAILABLE"}
-              </span>
-            </p>
-
-            {/* 🕒 Time */}
-            <p className="text-sm text-gray-500 mt-2">
-              🕒 {item.timestamp}
-            </p>
-          </div>
-        ))}
+      <div className="overflow-x-auto rounded shadow">
+        <table className="min-w-full bg-white text-sm text-black">
+          <thead className="bg-black text-white uppercase text-xs">
+            <tr>
+              <th className="px-4 py-3 text-left">📍 Site</th>
+              <th className="px-4 py-3 text-left">🆔 Device</th>
+              <th className="px-4 py-3 text-center">🚹 Male (Available/Total)</th>
+              <th className="px-4 py-3 text-center">🚺 Female (Available/Total)</th>
+              <th className="px-4 py-3 text-center">Status</th>
+              <th className="px-4 py-3 text-left">🕒 Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item, index) => {
+              const isFull = item.maleAvailable === 0 && item.femaleAvailable === 0
+              return (
+                <tr
+                  key={`${item.deviceId}-${item.timestamp}-${index}`}
+                  className="border-t hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-4 py-3 font-medium">{item.siteName}</td>
+                  <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                  <td className="px-4 py-3 text-center">
+                    {item.maleAvailable} / {item.maleStalls}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {item.femaleAvailable} / {item.femaleStalls}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        isFull
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-600"
+                      }`}
+                    >
+                      {isFull ? "FULL" : "AVAILABLE"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
