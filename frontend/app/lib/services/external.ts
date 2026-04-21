@@ -9,3 +9,6 @@ export const getWeather = () =>
 
  export const getRestroom = () =>
    apiClient("/dashboard/restroom")
+
+ export const getOverview = () =>
+  apiClient("/dashboard/overview")
