@@ -31,7 +31,6 @@ export default function RestroomPage() {
 
     load()
   }, [])
-
   // ===== Loading =====
   if (loading) {
     return <p className="p-6">Loading...</p>
@@ -71,8 +70,7 @@ export default function RestroomPage() {
             <p>
               🚺 Female: {item.femaleAvailable} / {item.femaleStalls}
             </p>
-
-            {/* 🧠 Status */}
+{/* 🧠 Status */}
             <p className="mt-2">
               Status:{" "}
               <span
