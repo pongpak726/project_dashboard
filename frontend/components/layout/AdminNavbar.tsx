@@ -1,33 +1,74 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
+import { RiDashboardHorizontalLine } from "react-icons/ri";
+import { FaUsers } from "react-icons/fa";
+import { IoLogOutSharp } from "react-icons/io5";
 
 export default function AdminNavbar() {
     const router = useRouter()
+    const pathname = usePathname()
 
     const handleLogout = () => {
         localStorage.removeItem("token")
         router.push("/login")
     }
 
-    return(
-        <aside className="w-64 h-screen sticky top-0 bg-gray-800 text-white p-4 flex flex-col justify-between">
-            <div>
-                <h2 className="font-bold mb-4">Admin</h2>
+    const navLinkClass = (href: string) => {
+    const isActive = pathname === href
+    return `flex items-center gap-2 text-lg px-2 py-2 rounded transition-colors duration-150
+        ${isActive
+            ? "bg-gray-600 text-white font-semibold"
+            : "hover:bg-gray-700"
+        }`
+}
 
+    return(
+        <aside className="
+            group
+            w-18 hover:w-64
+            h-screen sticky top-0
+            bg-gray-800 text-white p-4
+            flex flex-col justify-between
+            transition-all duration-300 overflow-hidden
+        ">
+            <div>
                 <ul className="space-y-2">
-                    <li><Link href="/admin/dashboard">Dashboard</Link></li>
-                    <li><Link href="/admin/users">Users</Link></li>
+                    <li>
+                        <Link href="/admin/dashboard" className={navLinkClass("/admin/dashboard")}>
+                            <span className="shrink-0">
+                                <RiDashboardHorizontalLine size={24} />
+                            </span>
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                                Dashboard
+                            </span>
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/admin/users" className={navLinkClass("/admin/users")}>
+                            <span className="shrink-0">
+                                <FaUsers size={24} />
+                            </span>
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                                Users
+                            </span>
+                        </Link>
+                    </li>
                 </ul>
             </div>
 
             <button
-                onClick={handleLogout}
-                className="bg-red-500 p-2 rounded mt-6"
-            >
-                Logout
-            </button>
+    onClick={handleLogout}
+    className="bg-red-500 hover:bg-red-600 p-2 rounded mt-6 transition-colors duration-150 flex items-center gap-2"
+>
+    <span className="shrink-0">
+        <IoLogOutSharp size={24} />
+    </span>
+    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+        Logout
+    </span>
+</button>
         </aside>
     )
 }
