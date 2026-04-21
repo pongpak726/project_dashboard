@@ -83,7 +83,8 @@ export default function RestroomPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+    
   )
 }
