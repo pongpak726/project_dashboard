@@ -14,6 +14,23 @@ import {
 } from "recharts"
 import { Card } from "@/components/ui/card"
 
+  type Weather = {
+    temperature: number
+    humidity: number
+    pm25: number
+    timestamp: string
+  }
+
+  export type Restroom = {
+    siteName: string
+    deviceId: string
+    maleStalls: number
+    maleAvailable: number
+    femaleStalls: number
+    femaleAvailable: number
+    timestamp: string
+  }
+
 export default function OverviewPage() {
   const [pm25Data, setPm25Data] = useState<any[]>([])
   const [usageData, setUsageData] = useState<any[]>([])
@@ -28,12 +45,43 @@ export default function OverviewPage() {
         const pm = buildPm25Chart(res.data.weather)
         const usage = buildUsageByGenderChart(res.data.restroom)
 
+        const weather: Weather[] = res.data.weather
+        const restroom: Restroom[] = res.data.restroom
+
+        console.log(weather)
+
+
         setPm25Data(pm)
         setUsageData(usage)
 
-        // ✅ PM insight
+        // PM insight
         const maxPm = pm.length ? Math.max(...pm.map(d => d.avg)) : 0
         const minPm = pm.length ? Math.min(...pm.map(d => d.avg)) : 0
+
+        // avg Weather
+        const avgTemp =
+          weather.length > 0
+            ? weather.reduce((sum, d) => sum + d.temperature, 0) / weather.length
+            : 0
+
+        const avgHumidity =
+          weather.length > 0
+            ? weather.reduce((sum, d) => sum + d.humidity, 0) / weather.length
+            : 0
+
+        const avgPm25 =
+          weather.length > 0
+            ? weather.reduce((sum, d) => sum + d.pm25, 0) / weather.length
+            : 0
+
+        // เวลาล่าสุด (สำคัญ)
+        const latestTime =
+          weather.length > 0
+            ? weather
+                .map(d => new Date(d.timestamp))
+                .sort((a, b) => b.getTime() - a.getTime())[0]
+            : null
+
 
         // ✅ Usage insight (รวมชาย+หญิง)
         const isNoUsage =
@@ -43,9 +91,17 @@ export default function OverviewPage() {
         setInsight({
           maxPm,
           minPm,
-          usageStatus: isNoUsage ? "No Usage" : "Active"
+          usageStatus: isNoUsage ? "No Usage" : "Active",
+
+          avgTemp: avgTemp.toFixed(1),
+          avgHumidity: avgHumidity.toFixed(1),
+          avgPm25: avgPm25.toFixed(1),
+          latestTime: latestTime
+            ? latestTime.toLocaleString()
+            : "-"
         })
 
+        
       } catch (err) {
         console.error(err)
       } finally {
@@ -74,11 +130,18 @@ export default function OverviewPage() {
     <div className="p-6 space-y-6">
 
       {/* INSIGHT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+
         <Card title="Max PM2.5" value={insight.maxPm} color="text-red-500" />
         <Card title="Min PM2.5" value={insight.minPm} color="text-green-500" />
-        <Card title="Restroom Status" value={insight.usageStatus} color="text-blue-500" />
-      </div>
+
+        <Card title="Avg Temp" value={`${insight.avgTemp}°C`} color="text-orange-500"  />
+        <Card title="Avg Humidity" value={`${insight.avgHumidity}%`}  color="text-blue-500" />
+        <Card title="Avg PM2.5" value={insight.avgPm25} color="text-yellow-500" />
+
+        <Card title="Last Update" value={insight.latestTime} color="text-gray-500" />
+
+    </div>
 
       {/* CHART */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -131,7 +194,9 @@ export default function OverviewPage() {
                     textAnchor="end"
                   />
 
-                  <YAxis domain={[0, "dataMax + 1"]}/>
+                  <YAxis domain={[0, "dataMax + 1"]}
+                  allowDecimals={false}
+                  />
 
                   <Tooltip />
 
