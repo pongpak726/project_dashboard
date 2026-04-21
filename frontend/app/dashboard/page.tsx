@@ -40,7 +40,7 @@ export default function OverviewPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getOverview()
+        const res = await getOverview("Sikhio-Outbound", 10)
 
         const pm = buildPm25Chart(res.data.weather)
         const usage = buildUsageByGenderChart(res.data.restroom)
@@ -49,6 +49,8 @@ export default function OverviewPage() {
         const restroom: Restroom[] = res.data.restroom
 
         console.log(weather)
+        console.log(restroom)
+        console.log("RES:", res)
 
 
         setPm25Data(pm)
