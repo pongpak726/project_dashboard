@@ -71,12 +71,6 @@ export default function OverviewPage() {
   
   return (
     <div className="p-6 space-y-6">
-
-      {/* TITLE */}
-      <h1 className="text-3xl font-bold text-center text-black">
-        Dashboard Overview
-      </h1>
-
       {/* INSIGHT */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card title="Max PM2.5" value={insight.maxPm} color="text-red-500" />
