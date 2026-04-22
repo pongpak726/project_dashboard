@@ -59,3 +59,22 @@ exports.getOverview = async (req, res, next) => {
     next(err)
   }
 }
+
+exports.getParking = async (req, res, next) => {
+  try {
+    const { site, limit } = req.query
+
+    const data = await externalService.getParking({
+      site,
+      limit: Number(limit)
+    })
+
+    res.json({
+      success: true,
+      message: "Parking retrieved successfully",
+      data
+    })
+  } catch (err) {
+    next(err)
+  }
+}

@@ -34,7 +34,7 @@ export default function DashboardLayout({
       <Navbar />
       <div className="flex">
   <DashboardNav />
-  <main className="flex-1">
+  <main className="flex-1 min-w-0 overflow-hidden">
     {children}
   </main>
 </div>

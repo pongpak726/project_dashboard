@@ -41,6 +41,24 @@ exports.getRestroom = async ({ site, limit } = {}) => {
   }))
 }
 
+exports.getParking = async ({ site, limit } = {}) => {
+  const data = await fetchExternal("parking", {
+    site_name: site || "Sikhio-Outbound",
+    limit: Number(limit) || 10
+  })
+
+  if (!Array.isArray(data.data)) {
+    throw new Error("Invalid parking data format")
+  }
+
+  return data.data.map(item => ({
+    siteName: item.site_name,
+    deviceId: item.device_id,
+    capacity: Number(item.capacity) || 0,
+    available: Number(item.available) || 0,
+    timestamp: item.created_at
+  }))
+}
 
 
 
