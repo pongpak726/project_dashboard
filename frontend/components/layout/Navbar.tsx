@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getUser } from "@/app/lib/auth";
 import { IoLogOutSharp } from "react-icons/io5"
+import Swal from "sweetalert2";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -16,12 +17,23 @@ export default function Navbar() {
     const user = getUser();
     setUser(user);
     
-  }, []);
+  }, [pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
+  Swal.fire({
+    title: "Logout?",
+    text: "Are you sure?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+      router.replace("/login")
+    }
+  })
+}
 
   // 🔥 Function สำหรับกำหนด class ของแต่ละ link
   const navLinkClass = (href: string) => {
@@ -49,17 +61,17 @@ export default function Navbar() {
 
             {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
               <Link href="/admin/dashboard" className={navLinkClass("/admin")}>
-  Admin
-</Link>
+                Admin
+              </Link>
             )}
 
             <button
-  onClick={handleLogout}
-  className="flex items-center gap-2 px-3 py-1.5 rounded transition-colors duration-150 hover:bg-red-100 hover:text-red-600"
->
-  <IoLogOutSharp size={20} />
-  Logout
-</button>
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-1.5 rounded transition-colors duration-150 hover:bg-red-100 hover:text-red-600"
+            >
+              <IoLogOutSharp size={20} />
+              Logout
+            </button>
           </>
         ) : (
           <Link href="/login" className={navLinkClass("/login")}>

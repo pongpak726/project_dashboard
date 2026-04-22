@@ -5,15 +5,28 @@ import Link from "next/link"
 import { RiDashboardHorizontalLine } from "react-icons/ri";
 import { FaUsers } from "react-icons/fa";
 import { IoLogOutSharp } from "react-icons/io5";
+import Swal from "sweetalert2";
 
 export default function AdminNavbar() {
     const router = useRouter()
     const pathname = usePathname()
 
     const handleLogout = () => {
-        localStorage.removeItem("token")
-        router.push("/login")
+    Swal.fire({
+        title: "Logout?",
+        text: "Are you sure?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes"
+    }).then((result) => {
+        if (result.isConfirmed) {
+        localStorage.removeItem("accessToken")
+        localStorage.removeItem("refreshToken")
+        router.replace("/login")
+        }
+    })
     }
+    
 
     const navLinkClass = (href: string) => {
     const isActive = pathname === href

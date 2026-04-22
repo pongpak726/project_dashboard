@@ -34,7 +34,25 @@ export default function UsersPage() {
   const router = useRouter();
 
   useEffect(() => { setCurrentUser(getUser()) }, []);
-  useEffect(() => { loadUsers() }, []);
+    useEffect(() => {
+    let isMounted = true
+
+    const load = async () => {
+      try {
+        const data = await getUsers()
+        if (!isMounted) return
+        setUsers(Array.isArray(data) ? data : data?.data || [])
+      } catch (err: any) {
+        if (err.message === "Forbidden") router.push("/dashboard")
+      }
+    }
+
+    load()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
@@ -48,7 +66,7 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       const data = await getUsers();
-      setUsers(data);
+      setUsers(data?.data || [])
     } catch (err: any) {
       if (err.message === "Forbidden") router.push("/dashboard");
       else alert("Failed to load users");
@@ -83,7 +101,6 @@ export default function UsersPage() {
       await deleteUser(id);
       setUsers((prev) => prev.filter((u) => u.id !== id));
       await Swal.fire({ title: "Deleted!", icon: "success", timer: 1200, showConfirmButton: false, backdrop: false });
-      loadUsers();
     } catch { Swal.fire({ title: "Error", text: "Delete failed", icon: "error" }); }
     finally { setLoadingId(null); }
   };

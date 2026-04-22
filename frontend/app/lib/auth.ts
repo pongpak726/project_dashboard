@@ -4,11 +4,11 @@ export const decodeToken = (token: string) => {
 
     const base64Url = token.split(".")[1]
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-
     const payload = JSON.parse(atob(base64))
 
-    //====check expire====
-    if (payload.exp * 1000 < Date.now()) return null
+    // ✅ เช็ค expiry — ถ้าหมดอายุแล้ว return null เลย
+    const now = Math.floor(Date.now() / 1000)
+    if (payload.exp && payload.exp < now) return null
 
     return payload
   } catch {
@@ -17,12 +17,12 @@ export const decodeToken = (token: string) => {
 }
 
 export const getUser = () => {
-  const token = localStorage.getItem("token")
+  const token = localStorage.getItem("accessToken")
   if (!token) return null
 
   const payload = decodeToken(token)
   if (!payload) {
-    localStorage.removeItem("token")
+    localStorage.removeItem("accessToken")
     return null
   }
 

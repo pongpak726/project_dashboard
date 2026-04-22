@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const helmet = require("helmet")
 
 const userRoute = require("./routes/user.route");
 const authRoutes = require("./routes/auth.routes")
@@ -11,6 +12,7 @@ const weatherRoutes = require("./routes/external.routes")
 app.use(express.json());
 
 app.use(cors());
+app.use(helmet());
 
 app.use("/api/users", userRoute);
 app.use("/api/auth",authRoutes) ;

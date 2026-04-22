@@ -1,4 +1,5 @@
 const authService = require("../services/auth.service")
+const { generateAccessToken, generateRefreshToken } = require("../utils/jwt")
 
 exports.register = async (req, res, next) => {
   try {
@@ -11,8 +12,16 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const result = await authService.login(req.body)
-    res.json(result)
+    const user = await authService.login(req.body)
+
+    const accessToken = generateAccessToken(user)
+    const refreshToken = generateRefreshToken(user)
+
+    res.json({
+      accessToken,
+      refreshToken
+    })
+
   } catch (err) {
     next(err)
   }
