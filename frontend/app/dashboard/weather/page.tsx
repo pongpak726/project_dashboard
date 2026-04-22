@@ -24,7 +24,7 @@ export default function WeatherPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getWeather()
+        const res = await getWeather("Sikhio-Outbound", 10)
         setData(res.data)
       } catch (err) {
         console.error(err)

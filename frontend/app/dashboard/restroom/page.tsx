@@ -20,7 +20,7 @@ export default function RestroomPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getRestroom()
+        const res = await getRestroom("Sikhio-Outbound", 10)
         setData(res.data)
       } catch (err) {
         console.error("LOAD ERROR:", err)
