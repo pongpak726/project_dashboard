@@ -42,18 +42,27 @@ exports.getOverview = async (req, res, next) => {
   try {
     const { site, limit } = req.query
 
-    const [weather, restroom] = await Promise.all([
-      externalService.getWeather({ site, limit: Number(limit) }),
-      externalService.getRestroom({ site, limit: Number(limit) })
-    ])
+    const sites = Array.isArray(site) ? site : [site]
+
+    const results = await Promise.all(
+      sites.map(async (s) => {
+        const [weather, restroom] = await Promise.all([
+          externalService.getWeather({ site: s, limit: Number(limit) }),
+          externalService.getRestroom({ site: s, limit: Number(limit) })
+        ])
+
+        return {
+          site: s,
+          weather,
+          restroom
+        }
+      })
+    )
 
     res.json({
       success: true,
       message: "Overview retrieved successfully",
-      data: {
-        weather,
-        restroom
-      }
+      data: results
     })
   } catch (err) {
     next(err)

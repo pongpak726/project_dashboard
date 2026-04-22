@@ -7,10 +7,14 @@ const buildUrl = (path, params = {}) => {
   const url = new URL(`${process.env.EXTERNAL_API}/${path}`)
 
   Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
+  if (value !== undefined && value !== null) {
+    if (Array.isArray(value)) {
+      value.forEach(v => url.searchParams.append(key, v))
+    } else {
       url.searchParams.append(key, value)
     }
-  })
+  }
+})
 
   return url.toString()
 }

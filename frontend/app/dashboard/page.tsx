@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { getOverview } from "@/app/lib/services/external"
-import { buildPm25Chart, buildUsageByGenderChart } from "@/app/lib/utils/chart"
+import { buildMultiSitePm25Chart, buildMultiSiteRestroomChart } from "@/app/lib/utils/chart"
 import {
   LineChart,
   Line,
@@ -13,6 +13,7 @@ import {
   ResponsiveContainer
 } from "recharts"
 import { Card } from "@/components/ui/card"
+import { buildPmInsight, buildWeatherInsight } from "../lib/utils/insight"
 
   type Weather = {
     temperature: number
@@ -31,6 +32,14 @@ import { Card } from "@/components/ui/card"
     timestamp: string
   }
 
+  const colors = [
+  "#ef4444",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#a855f7"
+]
+
 export default function OverviewPage() {
   const [pm25Data, setPm25Data] = useState<any[]>([])
   const [usageData, setUsageData] = useState<any[]>([])
@@ -40,68 +49,49 @@ export default function OverviewPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await getOverview("Sikhio-Outbound", 10)
+        const res = await getOverview(["Sikhio-Inbound","Sikhio-Outbound", "bangkok_01","Rest Area KM 120",], 10)
 
-        const pm = buildPm25Chart(res.data.weather)
-        const usage = buildUsageByGenderChart(res.data.restroom)
+        const weather = res.data.flatMap((d: any) =>
+          (d.weather || []).map((w: any) => ({
+            ...w,
+            site: d.site   
+          }))
+        )
+        const restroom = res.data.flatMap((d: any) =>
+          (d.restroom || []).map((r: any) => ({
+            ...r,
+            site: d.site
+          }))
+        )
+        
+        const sortedWeather = [...weather].sort(
+          (a, b) =>
+            new Date(a.timestamp).getTime() -
+            new Date(b.timestamp).getTime()
+        )
 
-        const weather: Weather[] = res.data.weather
-        const restroom: Restroom[] = res.data.restroom
-
-        console.log(weather)
-        console.log(restroom)
-        console.log("RES:", res)
-
+        const pm = buildMultiSitePm25Chart(sortedWeather)
+        const usage = buildMultiSiteRestroomChart(restroom)
 
         setPm25Data(pm)
         setUsageData(usage)
 
-        // PM insight
-        const maxPm = pm.length ? Math.max(...pm.map(d => d.avg)) : 0
-        const minPm = pm.length ? Math.min(...pm.map(d => d.avg)) : 0
+        console.log(res)
 
-        // avg Weather
-        const avgTemp =
-          weather.length > 0
-            ? weather.reduce((sum, d) => sum + d.temperature, 0) / weather.length
-            : 0
-
-        const avgHumidity =
-          weather.length > 0
-            ? weather.reduce((sum, d) => sum + d.humidity, 0) / weather.length
-            : 0
-
-        const avgPm25 =
-          weather.length > 0
-            ? weather.reduce((sum, d) => sum + d.pm25, 0) / weather.length
-            : 0
-
-        // เวลาล่าสุด (สำคัญ)
-        const latestTime =
-          weather.length > 0
-            ? weather
-                .map(d => new Date(d.timestamp))
-                .sort((a, b) => b.getTime() - a.getTime())[0]
-            : null
-
-
-        // ✅ Usage insight (รวมชาย+หญิง)
-        const isNoUsage =
-          usage.length === 0 ||
-          usage.every(d => d.male === 0 && d.female === 0)
+        const pmInsight = buildPmInsight(pm)
+        const weatherInsight = buildWeatherInsight(weather)
 
         setInsight({
-          maxPm,
-          minPm,
-          usageStatus: isNoUsage ? "No Usage" : "Active",
-
-          avgTemp: avgTemp.toFixed(1),
-          avgHumidity: avgHumidity.toFixed(1),
-          avgPm25: avgPm25.toFixed(1),
-          latestTime: latestTime
-            ? latestTime.toLocaleString()
-            : "-"
+          maxPm: pmInsight.max,
+          minPm: pmInsight.min,
+          ...weatherInsight,
+          usageStatus:
+            usage.length === 0 || usage.every(d => d.male === 0 && d.female === 0)
+              ? "No Usage"
+              : "Active"
         })
+
+
 
         
       } catch (err) {
@@ -125,8 +115,12 @@ export default function OverviewPage() {
   }
 
   const isNoUsage =
-    usageData.length === 0 ||
-    usageData.every(d => d.male === 0 && d.female === 0)
+  usageData.length === 0 ||
+  usageData.every(d =>
+    Object.keys(d)
+      .filter(k => k !== "time")
+      .every(site => (d[site] || 0) === 0)
+  )
 
   return (
     <div className="p-6 space-y-6">
@@ -157,12 +151,23 @@ export default function OverviewPage() {
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={pm25Data}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="avg" stroke="#ef4444" dot />
-              </LineChart>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" />
+              <YAxis />
+              <Tooltip />
+
+              {Object.keys(pm25Data[0] || {})
+              .filter(key => key !== "time")
+              .map((site, i) => (
+                <Line
+                  key={site}
+                  type="linear"
+                  dataKey={site}
+                  stroke={colors[i % colors.length]}
+                  name={site}
+                />
+              ))}
+            </LineChart>
             </ResponsiveContainer>
           )}
         </div>
@@ -202,19 +207,16 @@ export default function OverviewPage() {
 
                   <Tooltip />
 
-                  <Line
-                    type="monotone"
-                    dataKey="male"
-                    stroke="#3b82f6"
-                    name="Male"
-                  />
-
-                  <Line
-                    type="monotone"
-                    dataKey="female"
-                    stroke="#a855f7"
-                    name="Female"
-                  />
+                  {Object.keys(usageData[0] || {})
+                  .filter(key => key !== "time")
+                  .map((site, i) => (
+                    <Line
+                      key={site}
+                      type="linear"
+                      dataKey={site}
+                      stroke={colors[i % colors.length]}
+                    />
+                  ))}
                 </LineChart>
               </ResponsiveContainer>
 

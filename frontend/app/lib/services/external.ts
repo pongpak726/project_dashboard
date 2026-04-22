@@ -12,10 +12,13 @@ export const getRestroom = (site: string, limit = 10) =>
     `/dashboard/restroom?site=${encodeURIComponent(site)}&limit=${limit}`
   )
 
-export const getOverview = (site: string, limit = 10) =>
-  apiClient(
-    `/dashboard/overview?site=${encodeURIComponent(site)}&limit=${limit}`
-  )
+export const getOverview = (site: string | string[], limit = 10) => {
+  const query = Array.isArray(site)
+    ? site.map(s => `site=${encodeURIComponent(s)}`).join("&")
+    : `site=${encodeURIComponent(site)}`
+
+  return apiClient(`/dashboard/overview?${query}&limit=${limit}`)
+}
 
 export const getParking = (site: string, limit = 10) =>
   apiClient(

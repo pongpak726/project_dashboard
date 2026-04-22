@@ -1,19 +1,55 @@
 // ====PM2.5/day====
-export const buildPm25Chart = (data: any[]) => {
-  const grouped: any = {}
+
+export const buildMultiSitePm25Chart = (data: any[]) => {
+  const grouped: Record<string, any> = {}
 
   data.forEach(item => {
-    const day = item.timestamp.split("T")[0]
+    const date = new Date(item.timestamp)
+    const minutes = Math.floor(date.getMinutes() / 5) * 5
 
-    if (!grouped[day]) grouped[day] = []
+    const time = `${date.getHours()
+      .toString()
+      .padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`
 
-    grouped[day].push(item.pm25)
+      
+    if (!grouped[time]) {
+      grouped[time] = { time }
+    }
+
+    grouped[time][item.site] = Number(item.pm25) || 0
   })
 
-  return Object.entries(grouped).map(([day, values]: any) => ({
-    day,
-    avg: values.reduce((a: number, b: number) => a + b, 0) / values.length
-  }))
+  return Object.values(grouped)
+}
+
+// restroom chart
+export const buildMultiSiteRestroomChart = (data: any[]) => {
+  const grouped: Record<string, any> = {}
+
+  data.forEach(item => {
+    const date = new Date(item.timestamp)
+    const minutes = Math.floor(date.getMinutes() / 5) * 5
+
+    const time = `${date.getHours()
+      .toString()
+      .padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`
+
+    const used =
+      (Number(item.maleStalls) - Number(item.maleAvailable)) +
+      (Number(item.femaleStalls) - Number(item.femaleAvailable))
+
+    if (!grouped[time]) {
+      grouped[time] = { time }
+    }
+
+    grouped[time][item.site] = Math.max(0, used)
+  })
+
+  return Object.values(grouped)
 }
 
 
@@ -84,54 +120,3 @@ export const buildPm25Chart = (data: any[]) => {
 //     return h1 * 60 + m1 - (h2 * 60 + m2)
 //   })
 // }
-
-export const buildUsageByGenderChart = (data: any[]) => {
-  const grouped: Record<
-    string,
-    { male: number[]; female: number[] }
-  > = {}
-
-  data.forEach(item => {
-    const time = new Date(item.timestamp)
-
-    const minutes = Math.floor(time.getMinutes() / 5) * 5
-
-    const label = `${time
-      .getHours()
-      .toString()
-      .padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`
-
-    // 🔥 แปลง string → number
-    const maleStalls = Number(item.maleStalls ?? 0)
-    const maleAvailable = Number(item.maleAvailable ?? 0)
-
-    const femaleStalls = Number(item.femaleStalls ?? 0)
-    const femaleAvailable = Number(item.femaleAvailable ?? 0)
-
-    const maleUsed = maleStalls - maleAvailable
-    const femaleUsed = femaleStalls - femaleAvailable
-
-    if (!grouped[label]) {
-      grouped[label] = { male: [], female: [] }
-    }
-
-    grouped[label].male.push(maleUsed)
-    grouped[label].female.push(femaleUsed)
-  })
-
-  const result = Object.entries(grouped).map(([time, values]) => ({
-    time,
-    male:
-      values.male.reduce((a, b) => a + b, 0) / values.male.length,
-    female:
-      values.female.reduce((a, b) => a + b, 0) / values.female.length
-  }))
-
-  return result.sort((a, b) => {
-    const [h1, m1] = a.time.split(":").map(Number)
-    const [h2, m2] = b.time.split(":").map(Number)
-    return h1 * 60 + m1 - (h2 * 60 + m2)
-  })
-}
