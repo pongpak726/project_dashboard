@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Navbar from "@/components/layout/Navbar"
 import DashboardNav from "@/components/layout/dashboard"
 import { getUser } from "../lib/auth"
@@ -12,32 +12,36 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const pathname = usePathname()
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
     const user = getUser()
 
     if (!user) {
-      router.push("/login")
+      router.replace("/login")
       return
     }
 
+    setAuthorized(true)
+  }, [])
 
-    setLoading(false)
-  }, [pathname])
-
-  if (loading) return <div>Loading...</div>
+  if (!authorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>Checking auth...</p>
+      </div>
+    )
+  }
 
   return (
     <>
       <Navbar />
       <div className="flex">
-  <DashboardNav />
-  <main className="flex-1 min-w-0 overflow-hidden">
-    {children}
-  </main>
-</div>
+        <DashboardNav />
+        <main className="flex-1 min-w-0 overflow-hidden">
+          {children}
+        </main>
+      </div>
     </>
   )
 }
