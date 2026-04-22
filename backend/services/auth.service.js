@@ -3,7 +3,6 @@ const prisma = new PrismaClient();
 const { hashPassword } = require("../utils/hash")
 
 const { comparePassword } = require("../utils/hash")
-const { generateToken } = require("../utils/jwt")
 
 exports.register = async (data) => {
     const hashed = await hashPassword(data.password)
@@ -44,10 +43,9 @@ exports.login = async (data) => {
     throw new Error("Invalid password")
   }
 
-  const token = generateToken({
+  // 🔥 return user only
+  return {
     id: user.id,
     role: user.role
-  })
-
-  return { token }
+  }
 }

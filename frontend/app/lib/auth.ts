@@ -17,12 +17,12 @@ export const decodeToken = (token: string) => {
 }
 
 export const getUser = () => {
-  const token = localStorage.getItem("token")
+  const token = localStorage.getItem("accessToken") // ✅ เปลี่ยนตรงนี้
   if (!token) return null
 
   const payload = decodeToken(token)
   if (!payload) {
-    localStorage.removeItem("token")
+    localStorage.removeItem("accessToken") // ✅ ลบ access อย่างเดียว
     return null
   }
 

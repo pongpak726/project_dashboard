@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { decodeToken } from "@/app/lib/auth"
+import {  getUser } from "@/app/lib/auth"
 import Swal from "sweetalert2"
 
 export default function LoginPage() {
@@ -35,9 +35,12 @@ export default function LoginPage() {
 
       const data = await res.json()
       if (!res.ok) throw new Error("Login failed")
-      if (!data.token) throw new Error("No token received")
+      if (!data.accessToken || !data.refreshToken) {
+        throw new Error("No token received")
+      }
 
-      localStorage.setItem("token", data.token)
+      localStorage.setItem("accessToken", data.accessToken)
+      localStorage.setItem("refreshToken", data.refreshToken)
       router.push("/dashboard")
     } catch (err: any) {
       Swal.fire({
@@ -54,16 +57,16 @@ export default function LoginPage() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem("token")
-    if (!token) return
-    const payload = decodeToken(token)
-    if (!payload) { localStorage.removeItem("token"); return }
-    if (payload.role === "ADMIN" || payload.role === "SUPER_ADMIN") {
-      router.push("/admin/dashboard")
-    } else {
-      router.push("/dashboard")
-    }
-  }, [])
+  const user = getUser() // 🔥 ใช้ helper ที่คุณมี
+
+  if (!user) return
+
+  if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+    router.push("/admin/dashboard")
+  } else {
+    router.push("/dashboard")
+  }
+}, [])
 
   return (
     <div className="bg-[#1e2a3a] p-6 rounded-2xl shadow-xl w-80 border border-white/10">
