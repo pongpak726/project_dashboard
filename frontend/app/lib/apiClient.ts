@@ -6,6 +6,13 @@ const processQueue = (token: string) => {
   refreshQueue = []
 }
 
+// ✅ helper แยก parse + check error
+const parseResponse = async (res: Response) => {
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.message || "API Error")
+  return data
+}
+
 export const apiClient = async (
   url: string,
   options: RequestInit = {}
@@ -28,10 +35,10 @@ export const apiClient = async (
 
   // ✅ ถ้า token ยังใช้ได้
   if (res.status !== 401) {
-    return res.json()
+    return parseResponse(res)  // ✅ ใช้ helper
   }
 
-  // 🚨 ถ้า 401 → refresh flow
+  // 🚨 401 → refresh flow
   const refreshToken = localStorage.getItem("refreshToken")
 
   if (!refreshToken) {
@@ -40,12 +47,16 @@ export const apiClient = async (
     return
   }
 
-  // 🔥 ป้องกันยิง refresh ซ้ำหลายครั้ง
+  // ป้องกันยิง refresh ซ้ำ
   if (isRefreshing) {
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {  // ✅ เพิ่ม reject
       refreshQueue.push(async (newToken: string) => {
-        const retryRes = await makeRequest(newToken)
-        resolve(retryRes.json())
+        try {
+          const retryRes = await makeRequest(newToken)
+          resolve(await parseResponse(retryRes))  // ✅ check error ด้วย
+        } catch (err) {
+          reject(err)  // ✅ propagate error
+        }
       })
     })
   }
@@ -53,25 +64,27 @@ export const apiClient = async (
   isRefreshing = true
 
   try {
+    console.log("401 → REFRESH")
+
     const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken })
     })
 
-    if (!refreshRes.ok) {
-      throw new Error("Refresh failed")
-    }
+    if (!refreshRes.ok) throw new Error("Refresh failed")
 
     const data = await refreshRes.json()
+    console.log("NEW TOKEN:", data.accessToken)
 
     localStorage.setItem("accessToken", data.accessToken)
-
     processQueue(data.accessToken)
 
-    // 🔁 retry request เดิม
+    console.log("TRY REQUEST")
+
+    // ✅ retry + check error
     const retryRes = await makeRequest(data.accessToken)
-    return retryRes.json()
+    return parseResponse(retryRes)
 
   } catch (err) {
     localStorage.clear()
