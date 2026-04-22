@@ -1,27 +1,37 @@
 // ====PM2.5/day====
 
 export const buildMultiSitePm25Chart = (data: any[]) => {
-  const grouped: Record<string, any> = {}
+  // group by site ก่อน
+  const bySite: Record<string, any[]> = {}
 
   data.forEach(item => {
-    const date = new Date(item.timestamp)
-    const minutes = Math.floor(date.getMinutes() / 5) * 5
-
-    const time = `${date.getHours()
-      .toString()
-      .padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`
-
-      
-    if (!grouped[time]) {
-      grouped[time] = { time }
-    }
-
-    grouped[time][item.site] = Number(item.pm25) || 0
+    if (!bySite[item.site]) bySite[item.site] = []
+    bySite[item.site].push({
+      pm25: Number(item.pm25) || 0,
+      time: new Date(item.timestamp).toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    })
   })
 
-  return Object.values(grouped)
+  // หา maxLength ของ site ที่ยาวสุด
+  const maxLen = Math.max(...Object.values(bySite).map(arr => arr.length))
+
+  // build rows by index
+  const result = []
+  for (let i = 0; i < maxLen; i++) {
+    const row: any = { index: i + 1 }
+    Object.entries(bySite).forEach(([site, arr]) => {
+      if (arr[i] !== undefined) {
+        row[site] = arr[i].pm25
+        row[`${site}_time`] = arr[i].time  // เก็บเวลาจริงไว้ใน tooltip
+      }
+    })
+    result.push(row)
+  }
+
+  return result
 }
 
 // restroom chart
@@ -52,7 +62,36 @@ export const buildMultiSiteRestroomChart = (data: any[]) => {
   return Object.values(grouped)
 }
 
+export const buildMultiSiteTempChart = (data: any[]) => {
+  const bySite: Record<string, any[]> = {}
 
+  data.forEach(item => {
+    if (!bySite[item.site]) bySite[item.site] = []
+    bySite[item.site].push({
+      temperature: Number(item.temperature) || 0,
+      time: new Date(item.timestamp).toLocaleTimeString("th-TH", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    })
+  })
+
+  const maxLen = Math.max(...Object.values(bySite).map(arr => arr.length))
+
+  const result = []
+  for (let i = 0; i < maxLen; i++) {
+    const row: any = { index: i + 1 }
+    Object.entries(bySite).forEach(([site, arr]) => {
+      if (arr[i] !== undefined) {
+        row[site] = arr[i].temperature
+        row[`${site}_time`] = arr[i].time
+      }
+    })
+    result.push(row)
+  }
+
+  return result
+}
 // ====restroom Usage/hour====
 // export const buildUsageChart = (data: any[]) => {
 //   const grouped: any = {}

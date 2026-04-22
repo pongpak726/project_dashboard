@@ -46,15 +46,17 @@ exports.getOverview = async (req, res, next) => {
 
     const results = await Promise.all(
       sites.map(async (s) => {
-        const [weather, restroom] = await Promise.all([
+        const [weather, restroom, parking] = await Promise.all([
           externalService.getWeather({ site: s, limit: Number(limit) }),
-          externalService.getRestroom({ site: s, limit: Number(limit) })
+          externalService.getRestroom({ site: s, limit: Number(limit) }),
+          externalService.getParking({ site: s, limit: Number(limit) })
         ])
 
         return {
           site: s,
           weather,
-          restroom
+          restroom,
+          parking
         }
       })
     )
