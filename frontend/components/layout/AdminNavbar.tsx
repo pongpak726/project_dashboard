@@ -19,7 +19,7 @@ export default function AdminNavbar() {
     const isActive = pathname === href
     return `flex items-center gap-2 text-lg px-2 py-2 rounded transition-colors duration-150
         ${isActive
-            ? "bg-gray-600 text-white font-semibold"
+            ? "bg-gray-600 text-white font-semibold ring-1 ring-white/60"
             : "hover:bg-gray-700"
         }`
 }
@@ -34,13 +34,13 @@ export default function AdminNavbar() {
             transition-all duration-300 overflow-hidden
         ">
             <div>
-                <ul className="space-y-2">
+                <ul className="space-y-2 ">
                     <li>
                         <Link href="/admin/dashboard" className={navLinkClass("/admin/dashboard")}>
                             <span className="shrink-0">
                                 <RiDashboardHorizontalLine size={24} />
                             </span>
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap ">
                                 Dashboard
                             </span>
                         </Link>

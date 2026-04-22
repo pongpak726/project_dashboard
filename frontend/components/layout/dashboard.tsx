@@ -21,7 +21,7 @@ export default function DashboardNav() {
     const isActive = pathname === href
     return `flex items-center gap-2 text-lg px-2 py-2 rounded transition-colors duration-150
       ${isActive
-        ? "bg-gray-600 text-white font-semibold"
+        ? "bg-gray-600 text-white font-semibold ring-1 ring-white/60"
         : "hover:bg-gray-700"
       }`
   }
