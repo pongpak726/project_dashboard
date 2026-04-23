@@ -10,6 +10,8 @@ const SITES = [
   "Rest Area KM 120",
 ]
 
+const PAGE_SIZE = 10
+
 type Restroom = {
   siteName: string
   deviceId: string
@@ -24,14 +26,15 @@ export default function RestroomPage() {
   const [data, setData] = useState<Restroom[]>([])
   const [loading, setLoading] = useState(true)
   const [site, setSite] = useState("Sikhio-Outbound")
-  const [limit, setLimit] = useState(10)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        const res = await getRestroom(site, limit)
+        const res = await getRestroom(site, 100)
         setData(res.data)
+        setPage(1)
       } catch (err) {
         console.error("LOAD ERROR:", err)
       } finally {
@@ -39,7 +42,10 @@ export default function RestroomPage() {
       }
     }
     load()
-  }, [site, limit])
+  }, [site])
+
+  const totalPages = Math.ceil(data.length / PAGE_SIZE)
+  const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <div className="p-6 min-w-0 w-full">
@@ -57,18 +63,6 @@ export default function RestroomPage() {
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">🔢 Limit</label>
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm w-20 text-black focus:outline-none focus:ring-2 focus:ring-black"
-          />
         </div>
       </div>
 
@@ -90,12 +84,12 @@ export default function RestroomPage() {
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-gray-400">Loading...</td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : paginated.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-gray-400">No restroom data</td>
               </tr>
             ) : (
-              data.map((item, index) => {
+              paginated.map((item, index) => {
                 const isFull = item.maleAvailable === 0 && item.femaleAvailable === 0
                 return (
                   <tr
@@ -125,6 +119,47 @@ export default function RestroomPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+          <p>
+            แสดง {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, data.length)} จาก {data.length} รายการ
+          </p>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(1)} disabled={page === 1}
+              className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100 transition">«</button>
+            <button onClick={() => setPage(p => p - 1)} disabled={page === 1}
+              className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100 transition">‹</button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce((acc: (number | string)[], p, idx, arr) => {
+                if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...")
+                acc.push(p)
+                return acc
+              }, [])
+              .map((p, i) =>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} className="px-2">...</span>
+                ) : (
+                  <button key={p} onClick={() => setPage(p as number)}
+                    className={`px-3 py-1 rounded border transition ${
+                      page === p ? "bg-black text-white" : "hover:bg-gray-100"
+                    }`}>
+                    {p}
+                  </button>
+                )
+              )}
+
+            <button onClick={() => setPage(p => p + 1)} disabled={page === totalPages}
+              className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100 transition">›</button>
+            <button onClick={() => setPage(totalPages)} disabled={page === totalPages}
+              className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100 transition">»</button>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

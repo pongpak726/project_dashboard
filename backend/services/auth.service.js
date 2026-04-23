@@ -9,13 +9,13 @@ exports.register = async (data) => {
 
     return prisma.user.create({
         data:{
-            email:data.email,
+            username: data.username, 
             name:data.name,
             password: hashed
         },
         select: {
             id: true,
-            email: true,
+            username: true,
             name: true,
             role: true,
             isActive: true,
@@ -26,7 +26,7 @@ exports.register = async (data) => {
 
 exports.login = async (data) => {
   const user = await prisma.user.findUnique({
-    where: { email: data.email }
+    where: { username: data.username }
   })
 
   if (!user) {
