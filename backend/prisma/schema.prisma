@@ -24,46 +24,48 @@ enum Role {
 }
 
 model Device {
-  id        String   @id @default(uuid())
-  siteId    String
-  lat       Float
-  lon       Float
+  id       String @id @default(uuid())
+  siteId   String
+  lat      Float
+  lon      Float
 
-  weatherLogs WeatherLog[]
+  weatherLogs  Weather[]   
+  parkingLogs  Parking[]   
+  restroomLogs Restroom[]  
 }
 
 model Weather {
-  id             String   @id @default(uuid())
-  deviceId       String
-  temperature    Float
-  humidity       Float
-  pm25           Float
-  rain           Float?
-  windSpeed      Float?
-  windDirection  Float?
-  timestamp      DateTime
+  id            String   @id @default(uuid())
+  deviceId      String
+  temperature   Float
+  humidity      Float
+  pm25          Float
+  rain          Float?
+  windSpeed     Float?
+  windDirection Float?
+  timestamp     DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
 }
 
 model Parking {
-  id             String   @id @default(uuid())
-  deviceId       String
-  capacity       number
-  available      number?
-  timestamp      DateTime
+  id        String   @id @default(uuid())
+  deviceId  String
+  capacity  Int      
+  available Int?     
+  timestamp DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
 }
 
 model Restroom {
-  id                String   @id @default(uuid())
-  deviceId          String
-  male_stalls       number
-  male_available    number
-  female_stall      number
-  female_available  number
-  timestamp      DateTime
+  id              String   @id @default(uuid())
+  deviceId        String
+  maleStalls      Int      
+  maleAvailable   Int      
+  femaleStalls    Int      
+  femaleAvailable Int      
+  timestamp       DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
 }
