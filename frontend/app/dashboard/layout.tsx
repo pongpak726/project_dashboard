@@ -1,29 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRequireAuth } from "@/app/lib/hooks/useRequireAuth"
 import Navbar from "@/components/layout/Navbar"
 import DashboardNav from "@/components/layout/dashboard"
-import { getUser } from "../lib/auth"
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const router = useRouter()
-  const [authorized, setAuthorized] = useState(false)
-
-  useEffect(() => {
-    const user = getUser()
-
-    if (!user) {
-      router.replace("/login")
-      return
-    }
-
-    setAuthorized(true)
-  }, [])
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const authorized = useRequireAuth()
 
   if (!authorized) {
     return (
@@ -38,9 +20,7 @@ export default function DashboardLayout({
       <Navbar />
       <div className="flex">
         <DashboardNav />
-        <main className="flex-1 min-w-0 overflow-hidden">
-          {children}
-        </main>
+        <main className="flex-1 min-w-0 overflow-hidden">{children}</main>
       </div>
     </>
   )

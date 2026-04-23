@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Poppins } from "next/font/google";
+import { SilentRefreshProvider } from "@/components/providers/SilentRefreshProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,7 +25,6 @@ export const metadata: Metadata = {
   description: "dashboard website",
 };
 
-  
 
 export default function RootLayout({
   children,
@@ -37,7 +37,9 @@ export default function RootLayout({
       className={`${poppins.variable} h-full antialiased`}
     >
       <body className="min-h-screen bg-gray-100 overflow-x-hidden">
-        {children}
+        <SilentRefreshProvider>
+          {children}
+        </SilentRefreshProvider>
       </body>
 
     </html>
