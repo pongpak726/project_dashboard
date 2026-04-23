@@ -10,7 +10,7 @@ import { getRoleBadge, getStatusBadge } from "@/app/lib/badge";
 export default function UsersPage() {
   type User = {
     id: string;
-    email: string;
+    username: string
     name: string;
     role: string;
     isActive: boolean;
@@ -18,7 +18,7 @@ export default function UsersPage() {
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("USER");
@@ -26,7 +26,7 @@ export default function UsersPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editEmail, setEditEmail] = useState("");
+  const [editUsername, setEditUsername] = useState("");
   const [editName, setEditName] = useState("");
   const [editRole, setEditRole] = useState("USER");
   const [editIsActive, setEditIsActive] = useState(true);
@@ -56,7 +56,7 @@ export default function UsersPage() {
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
-    setEditEmail(user.email);
+    setEditUsername(user.username);
     setEditName(user.name);
     setEditRole(user.role);
     setEditIsActive(user.isActive);
@@ -66,7 +66,7 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       const data = await getUsers();
-      setUsers(data?.data || [])
+      setUsers(Array.isArray(data) ? data : data?.data || []) 
     } catch (err: any) {
       if (err.message === "Forbidden") router.push("/dashboard");
       else alert("Failed to load users");
@@ -74,10 +74,10 @@ export default function UsersPage() {
   };
 
   const handleAddUser = async () => {
-    if (!email || !password) return alert("Email and password required");
+    if (!username || !password) return alert("Username and password required");
     try {
-      await createUser({ email, name, password, role, isActive });
-      setEmail(""); setName(""); setPassword(""); setRole("USER"); setIsActive(true);
+      await createUser({ username, name, password, role, isActive });
+      setUsername(""); setName(""); setPassword(""); setRole("USER"); setIsActive(true);
       await loadUsers();
       await Swal.fire({ title: "User created!", icon: "success", timer: 1200, showConfirmButton: false });
     } catch (err: any) { alert(err.message); }
@@ -86,7 +86,7 @@ export default function UsersPage() {
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
     try {
-      const updated = await updateUser(selectedUser.id, { email: editEmail, name: editName, role: editRole, isActive: editIsActive });
+      const updated = await updateUser(selectedUser.id, { username: editUsername, name: editName, role: editRole, isActive: editIsActive });
       setUsers((prev) => prev.map((u) => (u.id === selectedUser.id ? updated : u)));
       await Swal.fire({ title: "Updated!", icon: "success", timer: 1200, showConfirmButton: false, backdrop: false });
       setIsOpen(false); setSelectedUser(null);
@@ -145,7 +145,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
                   Add User
                 </h2>
 
-                <input className={inputClass} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <input className={inputClass} placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
                 <input className={inputClass} placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
                 <input className={inputClass} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
@@ -182,7 +182,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
                   {users.map((user) => (
                     <div key={user.id} className="bg-[#0f172a] border border-[#334155] rounded-lg px-4 py-3 flex justify-between items-center hover:border-blue-500 transition-colors">
                       <div className="flex flex-col gap-1">
-                        <p className="font-medium text-white">{user.email}</p>
+                        <p className="font-medium text-white">{user.username}</p>
                         <p className="text-sm text-gray-400">{user.name}</p>
                         <div className="flex gap-2 mt-1">
                           <span className={`px-2 py-0.5 text-xs rounded-full font-medium ${getRoleBadge(user.role)}`}>{user.role}</span>
@@ -214,7 +214,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
             <h2 className="text-xl font-bold border-b border-[#334155] pb-3">Edit User</h2>
 
-            <input className={inputClass} value={editEmail} onChange={(e) => setEditEmail(e.target.value)} placeholder="Email" />
+            <input className={inputClass} value={editUsername} onChange={(e) => setEditUsername(e.target.value)} placeholder="Username" />
             <input className={inputClass} value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" />
 
             {(currentUser?.role === "ADMIN" || currentUser?.role === "SUPER_ADMIN") && (

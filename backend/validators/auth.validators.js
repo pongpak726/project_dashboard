@@ -1,7 +1,7 @@
 const {z} = require("zod");
 
 const loginSchema = z.object({
-    email: z.email({ message: "Invalid email" }),
+    username: z.string().min(1, { message: "Username is required" }),
     password: z.string().min(1, { message: "Password is required" }),
 });
 

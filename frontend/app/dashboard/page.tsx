@@ -66,15 +66,17 @@ export default function OverviewPage() {
   const [insight, setInsight] = useState<any>({})
   const [latestWeather, setLatestWeather] = useState<any[]>([])
   const [restroomLatest, setRestroomLatest] = useState<any[]>([])
+  {/* ต้องมาลบ*/}
   const [parkingLatest, setParkingLatest] = useState<any[]>([
-  { site: "Sikhio-Outbound", deviceId: "parking-001", capacity: 50, available: 20, used: 30 },
-  { site: "Sikhio-Inbound", deviceId: "parking-002", capacity: 40, available: 35, used: 5 },
-  { site: "bangkok_01", deviceId: "parking-003", capacity: 100, available: 10, used: 90 },
-  { site: "Rest Area KM 120", deviceId: "parking-004", capacity: 60, available: 45, used: 15 },
+  { site: "Sikhio-Outbound", deviceId: "parking-001", capacity: 50, available: 20, used: 30,timestamp: "2024-06-01 12:00:00" },
+  { site: "Sikhio-Inbound", deviceId: "parking-002", capacity: 40, available: 35, used: 5,timestamp: "2024-06-01 12:00:00" },
+  { site: "bangkok_01", deviceId: "parking-003", capacity: 100, available: 0, used: 100,timestamp: "2024-06-01 12:00:00" },
+  { site: "Rest Area KM 120", deviceId: "parking-004", capacity: 60, available: 45, used: 15,timestamp: "2024-06-01 12:00:00" },
 ])
   const [tempData, setTempData] = useState<any[]>([])
   const [hiddenSites, setHiddenSites] = useState<Record<string, boolean>>({})
   const [hiddenTempSites, setHiddenTempSites] = useState<Record<string, boolean>>({})
+  const [activeTab, setActiveTab] = useState<"weather" | "parking" | "restroom">("weather")
 
   useEffect(() => {
     const load = async () => {
@@ -134,11 +136,13 @@ export default function OverviewPage() {
           return {
             site: d.site,
             maleTotal: Number(latest.maleStalls) || 0,
+            deviceId: latest.deviceId,
             maleAvailable: Number(latest.maleAvailable) || 0,
             maleUsed: (Number(latest.maleStalls) - Number(latest.maleAvailable)) || 0,
             femaleTotal: Number(latest.femaleStalls) || 0,
             femaleAvailable: Number(latest.femaleAvailable) || 0,
             femaleUsed: (Number(latest.femaleStalls) - Number(latest.femaleAvailable)) || 0,
+            timestamp: latest.timestamp,
           }
         }).filter(Boolean)
 
@@ -156,9 +160,10 @@ export default function OverviewPage() {
             capacity: latest.capacity,
             available: latest.available,
             used: latest.capacity - latest.available,
+            timestamp: latest.timestamp,
           }
         }).filter(Boolean)
-
+{/* ต้องมาลบ*/}
         if (latestParking.length > 0) {
   setParkingLatest(latestParking)
 }
@@ -213,40 +218,136 @@ console.log("PARKING LATEST:", parkingLatest)
     <div className="p-6 space-y-6">
       {/* LATEST TABLE */}
         <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-bold mb-4 text-black">Latest Data</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm text-black">
-              <thead className="bg-black text-white uppercase text-xs">
-                <tr>
-                  <th className="px-4 py-3 text-left">📍 Location</th>
-                  <th className="px-4 py-3 text-left">🆔 Device</th>
-                  <th className="px-4 py-3 text-center">🌫️ PM2.5</th>
-                  <th className="px-4 py-3 text-center">🌡️ Temperature</th>
-                  <th className="px-4 py-3 text-center">💧 Humidity</th>
-                  <th className="px-4 py-3 text-left">🕒 Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {latestWeather.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data</td>
-                  </tr>
-                ) : (
-                  latestWeather.map((item, i) => (
-                    <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-medium">{item.site}</td>
-                      <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
-                      <td className="px-4 py-3 text-center"><PM25Badge value={item.pm25} /></td>
-                      <td className="px-4 py-3 text-center">{item.temperature} °C</td>
-                      <td className="px-4 py-3 text-center">{item.humidity} %</td>
-                      <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-bold text-black">Latest Data</h2>
+    {/* Tabs */}
+    <div className="flex gap-2">
+      {(["weather", "parking", "restroom"] as const).map(tab => (
+        <button
+          key={tab}
+          onClick={() => setActiveTab(tab)}
+          className={`px-3 py-1.5 rounded text-xs font-semibold capitalize transition-colors ${
+            activeTab === tab
+              ? "bg-black text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          {tab === "weather" ? "🌤 Weather" : tab === "parking" ? "🚗 Parking" : "🚻 Restroom"}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  <div className="overflow-x-auto">
+    {/* WEATHER */}
+    {activeTab === "weather" && (
+      <table className="min-w-full text-sm text-black">
+        <thead className="bg-black text-white uppercase text-xs">
+          <tr>
+            <th className="px-4 py-3 text-left">📍 Location</th>
+            <th className="px-4 py-3 text-left">🆔 Device</th>
+            <th className="px-4 py-3 text-center">🌫️ PM2.5</th>
+            <th className="px-4 py-3 text-center">🌡️ Temperature</th>
+            <th className="px-4 py-3 text-center">💧 Humidity</th>
+            <th className="px-4 py-3 text-left">🕒 Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {latestWeather.length === 0 ? (
+            <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
+          ) : (
+            latestWeather.map((item, i) => (
+              <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 font-medium">{item.site}</td>
+                <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                <td className="px-4 py-3 text-center"><PM25Badge value={item.pm25} /></td>
+                <td className="px-4 py-3 text-center">{item.temperature} °C</td>
+                <td className="px-4 py-3 text-center">{item.humidity} %</td>
+                <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    )}
+
+    {/* PARKING */}
+    {activeTab === "parking" && (
+      <table className="min-w-full text-sm text-black">
+        <thead className="bg-black text-white uppercase text-xs">
+          <tr>
+            <th className="px-4 py-3 text-left">📍 Location</th>
+            <th className="px-4 py-3 text-left">🆔 Device</th>
+            <th className="px-4 py-3 text-center">🚗 Available / Capacity</th>
+            <th className="px-4 py-3 text-center">Status</th>
+            <th className="px-4 py-3 text-left">🕒 Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {parkingLatest.length === 0 ? (
+            <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
+          ) : (
+            parkingLatest.map((item, i) => (
+              <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 font-medium">{item.site}</td>
+                <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                <td className="px-4 py-3 text-center">{item.available} / {item.capacity}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    item.available === 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                  }`}>
+                    {item.available === 0 ? "FULL" : "AVAILABLE"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    )}
+
+    {/* RESTROOM */}
+    {activeTab === "restroom" && (
+      <table className="min-w-full text-sm text-black">
+        <thead className="bg-black text-white uppercase text-xs">
+          <tr>
+            <th className="px-4 py-3 text-left">📍 Location</th>
+            <th className="px-4 py-3 text-left">🆔 Device</th>
+            <th className="px-4 py-3 text-center">🚹 Male (Available/Total)</th>
+            <th className="px-4 py-3 text-center">🚺 Female (Available/Total)</th>
+            <th className="px-4 py-3 text-center">Status</th>
+            <th className="px-4 py-3 text-left">🕒 Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {restroomLatest.length === 0 ? (
+            <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
+          ) : (
+            restroomLatest.map((item, i) => (
+              <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 font-medium">{item.site}</td>
+                <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                <td className="px-4 py-3 text-center">{item.maleAvailable} / {item.maleTotal}</td>
+                <td className="px-4 py-3 text-center">{item.femaleAvailable} / {item.femaleTotal}</td>
+                <td className="px-4 py-3 text-center">
+                  <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                    item.maleAvailable === 0 && item.femaleAvailable === 0
+                      ? "bg-red-100 text-red-600"
+                      : "bg-green-100 text-green-600"
+                  }`}>
+                    {item.maleAvailable === 0 && item.femaleAvailable === 0 ? "FULL" : "AVAILABLE"}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    )}
+  </div>
+</div>
       
 
       {/* CHART */}

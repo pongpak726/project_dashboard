@@ -7,7 +7,7 @@ exports.getUsers = () => {
   return prisma.user.findMany({
   select: {
     id: true,
-    email: true,
+    username: true,
     name: true,
     role: true,
     isActive: true,
@@ -22,7 +22,7 @@ exports.getUserById = (id) => {
     where: { id },
     select: {
     id: true,
-    email: true,
+    username: true,
     name: true,
     role: true,
     isActive: true,
@@ -41,7 +41,7 @@ exports.createUser = async (data) => {
 
   return prisma.user.create({
     data: {
-      email: data.email,
+      username: data.username,
       name: data.name,
       password: hashed,
       role: data.role || "USER",
@@ -49,7 +49,7 @@ exports.createUser = async (data) => {
     },
     select: {
       id: true,
-      email: true,
+      username: true,
       name: true,
       role: true,
       isActive: true
@@ -73,9 +73,9 @@ exports.updateUser = async (id, data, currentUser) => {
   let allowed = []
 
   if (currentUser.role === "ADMIN") {
-    allowed = ["email", "name", "password", "role", "isActive"]
+    allowed = ["username", "name", "password", "role", "isActive"]
   } else if (currentUser.role === "SUPER_ADMIN") {
-    allowed = ["email", "name", "password", "role", "isActive"]
+    allowed = ["username", "name", "password", "role", "isActive"]
   } else {
     throw new Error("Forbidden")
   }
@@ -126,7 +126,7 @@ exports.updateUser = async (id, data, currentUser) => {
       data: updateData,
       select: {
         id: true,
-        email: true,
+        username: true,
         name: true,
         role: true,
         isActive: true
@@ -134,7 +134,7 @@ exports.updateUser = async (id, data, currentUser) => {
     })
   } catch (error) {
     if (error.code === "P2002") {
-      throw new Error("Email already exists")
+      throw new Error("Username already exists")
     }
     if (error.code === "P2025") {
       throw new Error("User not found")

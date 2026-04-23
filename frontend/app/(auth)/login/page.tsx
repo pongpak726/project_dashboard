@@ -6,7 +6,7 @@ import {  getUser } from "@/app/lib/auth"
 import Swal from "sweetalert2"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -15,7 +15,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setLoading(true)
     try {
-      if (!email || !password) {
+      if (!username || !password) {
         Swal.fire({
           icon: "warning",
           title: "กรุณากรอกข้อมูล",
@@ -30,7 +30,7 @@ export default function LoginPage() {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       })
 
       const data = await res.json()
@@ -83,10 +83,10 @@ export default function LoginPage() {
 
       <input
         className="w-full mb-3 p-2 border-2 border-white/10 rounded-lg bg-[#0f172a] text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        type="username"
+        placeholder="username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
       />
 
       <input
