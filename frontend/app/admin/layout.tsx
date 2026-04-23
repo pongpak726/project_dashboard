@@ -1,34 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { getUser } from "@/app/lib/auth"
+import { useRequireAuth } from "@/app/lib/hooks/useRequireAuth"
 import AdminNavbar from "@/components/layout/AdminNavbar"
 import Navbar from "@/components/layout/Navbar"
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const router = useRouter()
-  const [authorized, setAuthorized] = useState(false)
-
-  useEffect(() => {
-    const user = getUser()
-
-    if (!user) {
-      router.replace("/login") // 🔥 replace แทน push
-      return
-    }
-
-    if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
-      router.replace("/dashboard")
-      return
-    }
-
-    setAuthorized(true)
-  }, [])
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const authorized = useRequireAuth(["ADMIN", "SUPER_ADMIN"])
 
   if (!authorized) {
     return (
@@ -43,9 +20,7 @@ export default function AdminLayout({
       <Navbar />
       <div className="flex">
         <AdminNavbar />
-        <main className="flex-1 bg-gray-100">
-          {children}
-        </main>
+        <main className="flex-1 bg-gray-100">{children}</main>
       </div>
     </>
   )
