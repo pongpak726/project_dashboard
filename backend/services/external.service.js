@@ -26,7 +26,8 @@ exports.getRestroom = async ({ site, limit } = {}) => {
   return data.data.map(item => ({
     siteName: item.site_name,
     deviceId: item.device_id,
-    // ❌ ลบ lat/lon ออก
+    lat: Number(item.latitude) || 0,   
+    lon: Number(item.longitude) || 0,  
     maleStalls: Number(item.male_stalls) || 0,
     maleAvailable: Number(item.male_available) || 0,
     femaleStalls: Number(item.female_stalls) || 0,
