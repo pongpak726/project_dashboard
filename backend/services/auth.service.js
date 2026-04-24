@@ -1,5 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../prisma")
 const { hashPassword } = require("../utils/hash")
 
 const { comparePassword } = require("../utils/hash")

@@ -1,6 +1,6 @@
 const externalService = require("./external.service")
 const prisma = require("../prisma")
-const pLimit = require("p-limit")
+const pLimit = require("p-limit").default
 
 const concurrency = pLimit(10)  // ✅ เปลี่ยนชื่อไม่ชนกับ param limit
 
