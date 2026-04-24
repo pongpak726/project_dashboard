@@ -24,14 +24,16 @@ enum Role {
 }
 
 model Device {
-  id       String @id @default(uuid())
-  siteId   String
+  id       String @id
+  siteName String
   lat      Float
   lon      Float
 
-  weatherLogs  Weather[]   
-  parkingLogs  Parking[]   
-  restroomLogs Restroom[]  
+  weatherLogs  Weather[]
+  parkingLogs  Parking[]
+  restroomLogs Restroom[]
+
+  @@index([siteName])  // ✅ เพิ่ม
 }
 
 model Weather {
@@ -46,26 +48,32 @@ model Weather {
   timestamp     DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])   // ✅ เพิ่ม
 }
 
 model Parking {
   id        String   @id @default(uuid())
   deviceId  String
-  capacity  Int      
-  available Int?     
+  capacity  Int
+  available Int?
   timestamp DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])   // ✅ เพิ่ม
 }
 
 model Restroom {
   id              String   @id @default(uuid())
   deviceId        String
-  maleStalls      Int      
-  maleAvailable   Int      
-  femaleStalls    Int      
-  femaleAvailable Int      
+  maleStalls      Int
+  maleAvailable   Int
+  femaleStalls    Int
+  femaleAvailable Int
   timestamp       DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])   // ✅ เพิ่ม
 }
