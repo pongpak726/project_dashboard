@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { getWeather } from "@/app/lib/services/external"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import Papa from "papaparse"
 
 const SITES = [
   "Sikhio-Outbound",
@@ -51,24 +54,85 @@ export default function WeatherPage() {
   const totalPages = Math.ceil(data.length / PAGE_SIZE)
   const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
+  const exportCSV = () => {
+  const csv = Papa.unparse(data.map(item => ({
+    Location: item.location,
+    Device: item.deviceId,
+    "PM2.5 (μg/m³)": item.pm25,
+    "Temperature (°C)": item.temperature,
+    "Humidity (%)": item.humidity,
+    Timestamp: item.timestamp,
+  })))
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `weather_${site}_${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const exportPDF = () => {
+  const doc = new jsPDF()
+  doc.setFontSize(14)
+  doc.text(`Weather Report - ${site}`, 14, 15)
+  doc.setFontSize(10)
+  doc.text(`Generated: ${new Date().toLocaleString("th-TH")}`, 14, 22)
+
+  autoTable(doc, {
+    startY: 28,
+    head: [["Location", "Device", "PM2.5", "Temp (°C)", "Humidity (%)", "Timestamp"]],
+    body: data.map(item => [
+      item.location,
+      item.deviceId,
+      `${item.pm25} ug/m3`,
+      `${item.temperature} C`,
+      `${item.humidity}%`,
+      item.timestamp,
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [0, 0, 0] },
+  })
+
+  doc.save(`weather_${site}_${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
   return (
     <div className="p-6 min-w-0 w-full">
 
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">📍 Site</label>
-          <select
-            value={site}
-            onChange={(e) => setSite(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
-          >
-            {SITES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+<div className="flex flex-wrap gap-3 mb-4 items-center justify-between">
+  <div className="flex items-center gap-2">
+    <label className="text-sm font-medium text-gray-700">📍 Site</label>
+    <select
+      value={site}
+      onChange={(e) => setSite(e.target.value)}
+      className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+    >
+      {SITES.map((s) => (
+        <option key={s} value={s}>{s}</option>
+      ))}
+    </select>
+  </div>
+
+  {/* Export buttons */}
+  {!loading && data.length > 0 && (
+    <div className="flex gap-2">
+      <button
+        onClick={exportCSV}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-green-500 text-green-600 text-sm hover:bg-green-50 transition"
+      >
+        📄 Export CSV
+      </button>
+      <button
+        onClick={exportPDF}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-500 text-red-600 text-sm hover:bg-red-50 transition"
+      >
+        📑 Export PDF
+      </button>
+    </div>
+  )}
+</div>
 
       {/* Table */}
       <div className="overflow-x-auto rounded shadow w-full">

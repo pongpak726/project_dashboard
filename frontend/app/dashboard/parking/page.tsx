@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react"
 import { getParking } from "@/app/lib/services/external"
 import { PARKING_MOCK } from "@/app/lib/mock/parkingMock"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
+import Papa from "papaparse"
+
 const SITES = [
   "Sikhio-Outbound",
   "Sikhio-Inbound",
@@ -48,24 +52,84 @@ export default function ParkingPage() {
   const totalPages = Math.ceil(data.length / PAGE_SIZE)
   const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
+  const exportCSV = () => {
+  const csv = Papa.unparse(data.map(item => ({
+    Site: item.siteName,
+    Device: item.deviceId,
+    Available: item.available,
+    Capacity: item.capacity,
+    Status: item.available === 0 ? "FULL" : "AVAILABLE",
+    Timestamp: item.timestamp,
+  })))
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `parking_${site}_${new Date().toISOString().slice(0, 10)}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+const exportPDF = () => {
+  const doc = new jsPDF()
+  doc.setFontSize(14)
+  doc.text(`Parking Report - ${site}`, 14, 15)
+  doc.setFontSize(10)
+  doc.text(`Generated: ${new Date().toLocaleString("th-TH")}`, 14, 22)
+
+  autoTable(doc, {
+    startY: 28,
+    head: [["Site", "Device", "Available", "Capacity", "Status", "Timestamp"]],
+    body: data.map(item => [
+      item.siteName,
+      item.deviceId,
+      item.available,
+      item.capacity,
+      item.available === 0 ? "FULL" : "AVAILABLE",
+      item.timestamp,
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [0, 0, 0] },
+  })
+
+  doc.save(`parking_${site}_${new Date().toISOString().slice(0, 10)}.pdf`)
+}
+
   return (
     <div className="p-6 min-w-0 w-full">
 
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 mb-4 items-center">
-        <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-gray-700">📍 Site</label>
-          <select
-            value={site}
-            onChange={(e) => setSite(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
-          >
-            {SITES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+<div className="flex flex-wrap gap-3 mb-4 items-center justify-between">
+  <div className="flex items-center gap-2">
+    <label className="text-sm font-medium text-gray-700">📍 Site</label>
+    <select
+      value={site}
+      onChange={(e) => setSite(e.target.value)}
+      className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white text-black focus:outline-none focus:ring-2 focus:ring-black"
+    >
+      {SITES.map((s) => (
+        <option key={s} value={s}>{s}</option>
+      ))}
+    </select>
+  </div>
+
+  {!loading && data.length > 0 && (
+    <div className="flex gap-2">
+      <button
+        onClick={exportCSV}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-green-500 text-green-600 text-sm hover:bg-green-50 transition"
+      >
+        📄 Export CSV
+      </button>
+      <button
+        onClick={exportPDF}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-red-500 text-red-600 text-sm hover:bg-red-50 transition"
+      >
+        📑 Export PDF
+      </button>
+    </div>
+  )}
+</div>
 
       {/* Table */}
       <div className="overflow-x-auto rounded shadow w-full">
