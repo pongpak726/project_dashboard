@@ -2,21 +2,30 @@ const externalService = require("./external.service")
 const prisma = require("../prisma")
 const pLimit = require("p-limit").default
 
-const concurrency = pLimit(10)  // ✅ เปลี่ยนชื่อไม่ชนกับ param limit
+const concurrency = pLimit(10)
 
-const parseDate = (ts) => new Date(ts.replace(" ", "T") + "Z")
+const parseDate = (ts) => {
+  const d = new Date(ts.replace(" ", "T") + "Z")
+  d.setSeconds(0, 0)
+  return d
+}
+
+// ✅ สร้าง composite id ที่นี่ที่เดียว
+const makeDeviceId = (item) =>
+  `${item.location || item.siteName}:${item.deviceId}`
 
 const upsertDevice = (item) => {
-  const hasCoords = item.lat && item.lat !== 0 && item.lon && item.lon !== 0
+  const id = makeDeviceId(item)
+  const hasCoords = item.lat && item.lon  // ✅ declare แล้ว
 
   return prisma.device.upsert({
-    where: { id: item.deviceId },
+    where: { id },
     update: {
       siteName: item.location || item.siteName || "unknown",
-      ...(hasCoords && { lat: item.lat, lon: item.lon })  // ✅ update เฉพาะมีค่าจริง
+      ...(hasCoords && { lat: item.lat, lon: item.lon })
     },
     create: {
-      id: item.deviceId,
+      id,
       siteName: item.location || item.siteName || "unknown",
       lat: Number(item.lat) || 0,
       lon: Number(item.lon) || 0
@@ -24,74 +33,61 @@ const upsertDevice = (item) => {
   })
 }
 
-const processBatch = async (data, handler) => {
-  // ✅ upsert device เฉพาะตัวที่ unique — ไม่ยิงซ้ำ
-  const uniqueDevices = [...new Map(data.map(i => [i.deviceId, i])).values()]
-  await Promise.all(uniqueDevices.map(item => concurrency(() => upsertDevice(item))))
-
-  // ✅ แล้วค่อย upsert log ทั้งหมด
-  await Promise.all(
-    data.map(item =>
-      concurrency(async () => {
-        const timestamp = parseDate(item.timestamp)
-        await handler(item, timestamp)
-      })
-    )
-  )
+// ✅ helper upsert device unique ก่อน
+const upsertUniqueDevices = (data) => {
+  const unique = [...new Map(data.map(i => [makeDeviceId(i), i])).values()]
+  return Promise.all(unique.map(item => concurrency(() => upsertDevice(item))))
 }
 
 const ingestWeather = async ({ site, limit }) => {
   const data = await externalService.getWeather({ site, limit })
-  await processBatch(data, (item, timestamp) =>
-    prisma.weather.upsert({
-      where: { deviceId_timestamp: { deviceId: item.deviceId, timestamp } },
-      update: {},
-      create: {
-        deviceId: item.deviceId,
-        temperature: item.temperature,
-        humidity: item.humidity,
-        pm25: item.pm25,
-        rain: item.rain,             
-        windSpeed: item.windSpeed,   
-        windDirection: item.windDirection, 
-        timestamp
-      }
-    })
-  )
+  await upsertUniqueDevices(data)
+
+  await prisma.weather.createMany({
+    data: data.map(item => ({
+      deviceId: makeDeviceId(item),
+      temperature: item.temperature,
+      humidity: item.humidity,
+      pm25: item.pm25,
+      rain: item.rain,
+      windSpeed: item.windSpeed,
+      windDirection: item.windDirection,
+      timestamp: parseDate(item.timestamp)
+    })),
+    skipDuplicates: true
+  })
 }
 
 const ingestRestroom = async ({ site, limit }) => {
   const data = await externalService.getRestroom({ site, limit })
-  await processBatch(data, (item, timestamp) =>
-    prisma.restroom.upsert({
-      where: { deviceId_timestamp: { deviceId: item.deviceId, timestamp } },
-      update: {},
-      create: {
-        deviceId: item.deviceId,
-        maleStalls: item.maleStalls,
-        maleAvailable: item.maleAvailable,
-        femaleStalls: item.femaleStalls,
-        femaleAvailable: item.femaleAvailable,
-        timestamp
-      }
-    })
-  )
+  await upsertUniqueDevices(data)
+
+  await prisma.restroom.createMany({
+    data: data.map(item => ({
+      deviceId: makeDeviceId(item),
+      maleStalls: item.maleStalls,
+      maleAvailable: item.maleAvailable,
+      femaleStalls: item.femaleStalls,
+      femaleAvailable: item.femaleAvailable,
+      timestamp: parseDate(item.timestamp)
+    })),
+    skipDuplicates: true
+  })
 }
 
 const ingestParking = async ({ site, limit }) => {
   const data = await externalService.getParking({ site, limit })
-  await processBatch(data, (item, timestamp) =>
-    prisma.parking.upsert({
-      where: { deviceId_timestamp: { deviceId: item.deviceId, timestamp } },
-      update: {},
-      create: {
-        deviceId: item.deviceId,
-        capacity: item.capacity,
-        available: item.available,
-        timestamp
-      }
-    })
-  )
+  await upsertUniqueDevices(data)
+
+  await prisma.parking.createMany({
+    data: data.map(item => ({
+      deviceId: makeDeviceId(item),
+      capacity: item.capacity,
+      available: item.available,
+      timestamp: parseDate(item.timestamp)
+    })),
+    skipDuplicates: true
+  })
 }
 
 exports.ingestAll = async ({ site, limit }) => {
