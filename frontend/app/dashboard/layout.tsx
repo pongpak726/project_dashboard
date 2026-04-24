@@ -3,15 +3,23 @@
 import { useRequireAuth } from "@/app/lib/hooks/useRequireAuth"
 import Navbar from "@/components/layout/Navbar"
 import DashboardNav from "@/components/layout/dashboard"
+import { useState,useEffect } from "react"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const authorized = useRequireAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null 
 
   if (!authorized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <nav className="flex items-center justify-center min-h-screen">
         <p>Checking auth...</p>
-      </div>
+      </nav>
     )
   }
 
