@@ -5,7 +5,7 @@ import { getOverview } from "@/app/lib/services/external"
 import { buildMultiSitePm25Chart, buildMultiSiteRestroomChart, buildMultiSiteTempChart } from "@/app/lib/utils/chart"
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  CartesianGrid, ResponsiveContainer, BarChart, Bar, Legend
+  CartesianGrid, ResponsiveContainer, BarChart, Bar, Legend , ReferenceLine , LabelList ,Cell
 } from "recharts"
 import { buildPmInsight, buildWeatherInsight } from "../lib/utils/insight"
 
@@ -44,6 +44,7 @@ export default function OverviewPage() {
   const [page, setPage] = useState({ weather: 1, parking: 1, restroom: 1 })
   const PAGE_SIZE = 5
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null)
+  const [restroomFilter, setRestroomFilter] = useState<'Both' | 'Male' | 'Female'>('Both')
 
   useEffect(() => {
     const load = async () => {
@@ -65,15 +66,15 @@ export default function OverviewPage() {
         const temp = buildMultiSiteTempChart(sortedWeather)
 
         // ---- PM2.5 ----
-         setPm25Data(pm) // production
-         //setPm25Data(buildMockPm25Data()) // mock
+         //setPm25Data(pm) // production
+         setPm25Data(buildMockPm25Data()) // mock
 
         const allSites = Object.keys(pm[0] || {}).filter(k => k !== "index" && !k.endsWith("_time"))
         setSelectedSites(allSites.slice(0, 5))
 
         // ---- Temperature ----
-        setTempData(temp) // production
-         //setTempData(buildMockTempData()) // mock
+        //setTempData(temp) // production
+         setTempData(buildMockTempData()) // mock
 
          //---- Latest Weather ----
          const latestWeatherData = res.data.flatMap((d: any) => {
@@ -83,8 +84,8 @@ export default function OverviewPage() {
              temperature: w.temperature, humidity: w.humidity, timestamp: w.timestamp,
            }))
          })
-        setLatestWeather(latestWeatherData) // production
-         //setLatestWeather(buildMockLatestWeather()) // mock
+        //setLatestWeather(latestWeatherData) // production
+         setLatestWeather(buildMockLatestWeather()) // mock
 
         setUsageData(usage)
 
@@ -104,8 +105,8 @@ export default function OverviewPage() {
              timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         setRestroomLatest(latestRestroomData) // production
-         //setRestroomLatest(buildMockLatestRestroom()) // mock
+         //setRestroomLatest(latestRestroomData) // production
+         setRestroomLatest(buildMockLatestRestroom()) // mock
 
         // ---- Latest Parking ----
          const latestParkingData = res.data.map((d: any) => {
@@ -118,8 +119,8 @@ export default function OverviewPage() {
              used: latest.capacity - latest.available, timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         setParkingLatest(latestParkingData) // production
-         //setParkingLatest(buildMockLatestParking()) // mock
+         //setParkingLatest(latestParkingData) // production
+         setParkingLatest(buildMockLatestParking()) // mock
 
         const pmInsight = buildPmInsight(pm)
         const weatherInsight = buildWeatherInsight(weather)
@@ -199,6 +200,9 @@ const sortedWeatherData = [...latestWeather].sort((a, b) => {
   if (sortOrder === "desc") return b.pm25 - a.pm25
   return 0
 })
+console.log("PM25 DATA:", pm25Data)
+console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
+
 
   return (
     <div className="p-6 space-y-6">
@@ -333,207 +337,391 @@ const sortedWeatherData = [...latestWeather].sort((a, b) => {
 
         {/* PM2.5 */}
         <div className="bg-white p-4 rounded shadow" style={{ isolation: 'isolate' }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-black">PM2.5 Trend</h2>
-            <div className="relative" style={{ zIndex: 50 }}>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-bold text-black">PM2.5 Trend</h2>
+    <div className="relative" style={{ zIndex: 50 }}>
+      <button
+        onClick={() => setDropdownOpen(prev => !prev)}
+        className="flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
+      >
+        <span>Sites ({selectedSites.length} / {Object.keys(pm25Data[0] || {}).filter(k => k !== "index" && !k.endsWith("_time")).length})</span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {dropdownOpen && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setDropdownOpen(false)} />
+          <div className="absolute right-0 top-9 z-40 bg-white border rounded-lg shadow-lg w-72 p-2"
+            style={{ maxHeight: '280px', overflowY: 'auto' }}>
+            <div className="flex gap-2 mb-2 pb-2 border-b sticky top-0 bg-white">
               <button
-                onClick={() => setDropdownOpen(prev => !prev)}
-                className="flex items-center gap-2 px-3 py-1.5 border rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition"
-              >
-                <span>Sites ({selectedSites.length})</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {dropdownOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setDropdownOpen(false)} />
-                  <div className="absolute right-0 top-9 z-40 bg-white border rounded-lg shadow-lg w-72 p-2"
-                    style={{ maxHeight: '280px', overflowY: 'auto' }}>
-                    <div className="flex gap-2 mb-2 pb-2 border-b sticky top-0 bg-white">
-                      <button
-                        onClick={() => setSelectedSites(Object.keys(pm25Data[0] || {}).filter(k => k !== "index" && !k.endsWith("_time")))}
-                        className="text-sm text-blue-500 px-2 py-0.5 rounded"
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#eff6ff')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >Select All</button>
-                      <span className="text-gray-300">|</span>
-                      <button
-                        onClick={() => setSelectedSites([])}
-                        className="text-sm px-2 py-0.5 rounded"
-                        style={{ color: '#ef4444' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >Clear</button>
-                    </div>
-                    {Object.keys(pm25Data[0] || {})
-                      .filter(k => k !== "index" && !k.endsWith("_time"))
-                      .map((site, i) => (
-                        <label key={site} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedSites.includes(site)}
-                            onChange={() => setSelectedSites(prev =>
-                              prev.includes(site) ? prev.filter(s => s !== site) : [...prev, site]
-                            )}
-                            className="rounded"
-                            style={{ accentColor: colors[i % colors.length] }}
-                          />
-                          <span className="text-sm text-gray-700">{site}</span>
-                        </label>
-                      ))}
-                  </div>
-                </>
-              )}
+                onClick={() => setSelectedSites(Object.keys(pm25Data[0] || {}).filter(k => k !== "index" && !k.endsWith("_time")))}
+                className="text-sm text-blue-500 px-2 py-0.5 rounded hover:bg-blue-50"
+              >Select All</button>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={() => setSelectedSites([])}
+                className="text-sm text-red-500 px-2 py-0.5 rounded hover:bg-red-50"
+              >Clear</button>
             </div>
+            {Object.keys(pm25Data[0] || {})
+              .filter(k => k !== "index" && !k.endsWith("_time"))
+              .map((site, i) => {
+                const latest = [...pm25Data].reverse().find(d => d[site] !== undefined)?.[site]
+                return (
+                  <label key={site} className="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedSites.includes(site)}
+                        onChange={() => setSelectedSites(prev =>
+                          prev.includes(site) ? prev.filter(s => s !== site) : [...prev, site]
+                        )}
+                        className="rounded"
+                        style={{ accentColor: colors[i % colors.length] }}
+                      />
+                      <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ backgroundColor: colors[i % colors.length] }} />
+                      <span className="text-sm text-gray-700">{site}</span>
+                    </div>
+                    {latest !== undefined && (
+                      <span className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: latest > 50 ? '#fef2f2' : latest > 25 ? '#fffbeb' : '#f0fdf4',
+                          color: latest > 50 ? '#dc2626' : latest > 25 ? '#d97706' : '#16a34a'
+                        }}>
+                        {latest} μg
+                      </span>
+                    )}
+                  </label>
+                )
+              })}
           </div>
+        </>
+      )}
+    </div>
+  </div>
 
-          {pm25Data.length === 0 ? <p>No data</p> : (
-            <div style={{ pointerEvents: dropdownOpen ? 'none' : 'auto' }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={pm25Data} margin={{ left: -30 }}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="index" label={{ value: "ครั้งที่", position: "insideBottomRight", offset: -5 }} />
-                  <YAxis />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.length) return null
-                      return (
-                        <div className="bg-white border rounded shadow p-2 text-xs text-black space-y-1">
-                          {payload.map((p: any) => (
-                            <div key={p.dataKey} style={{ color: p.color }}>
-                              <span className="font-medium">{p.name}</span>{" · "}
-                              {p.payload[`${p.dataKey}_time`] ?? ""} · {p.value} μg/m³
-                            </div>
-                          ))}
-                        </div>
-                      )
-                    }}
-                  />
-                  {Object.keys(pm25Data[0] || {})
-                    .filter(key => key !== "index" && !key.endsWith("_time"))
-                    .map((site, i) => (
-                      <Line key={site} type="monotone" dataKey={site} stroke={colors[i % colors.length]}
-                        name={site} dot={{ r: 3, fill: "#fff" }} connectNulls strokeWidth={2}
-                        hide={!selectedSites.includes(site)} />
-                    ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-
-        {/* RESTROOM */}
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-bold mb-4 text-black">Restroom Usage</h2>
-          {restroomLatest.length === 0 ? <p>No data</p> : (
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-              <div className="grid grid-cols-2 gap-6">
-                {restroomLatest.map((item) => {
-                  const malePct = item.maleTotal > 0 ? Math.round((item.maleUsed / item.maleTotal) * 100) : 0
-                  const femalePct = item.femaleTotal > 0 ? Math.round((item.femaleUsed / item.femaleTotal) * 100) : 0
-                  const radius = 35
-                  const circumference = 2 * Math.PI * radius
-
-                  const MiniDonut = ({ pct, color, label, used, total }: any) => {
-                    const dash = (pct / 100) * circumference
-                    return (
-                      <div className="flex flex-col items-center">
-                        <svg width="90" height="90" viewBox="0 0 90 90">
-                          <circle cx="45" cy="45" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="12" />
-                          <circle cx="45" cy="45" r={radius} fill="none" stroke={color} strokeWidth="12"
-                            strokeDasharray={`${dash} ${circumference - dash}`}
-                            strokeLinecap="round" transform="rotate(-90 45 45)" />
-                          <text x="45" y="41" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#111">{used}</text>
-                          <text x="45" y="55" textAnchor="middle" fontSize="9" fill="#6b7280">/ {total}</text>
-                        </svg>
-                        <p className="text-xs font-medium text-gray-600 mt-1">{label}</p>
+  {pm25Data.length === 0 ? <p>No data</p> : (
+    <div style={{ pointerEvents: dropdownOpen ? 'none' : 'auto' }}>
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart data={pm25Data} margin={{ left: -30, right: 10, top: 5, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          {/* AQI reference lines */}
+          <ReferenceLine y={25} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: "25", position: "right", fontSize: 10, fill: "#f59e0b" }} />
+          <ReferenceLine y={50} stroke="#ef4444" strokeDasharray="4 4" label={{ value: "50", position: "right", fontSize: 10, fill: "#ef4444" }} />
+          <XAxis dataKey="index" label={{ value: "ครั้งที่", position: "insideBottomRight", offset: -5, fontSize: 11 }} tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} unit=" μg" />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const sorted = [...payload].sort((a: any, b: any) => (b.value ?? 0) - (a.value ?? 0))
+              return (
+                <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black"
+                  style={{ maxHeight: '200px', overflowY: 'auto', minWidth: '180px' }}>
+                  {sorted.map((p: any) => (
+                    <div key={p.dataKey} className="flex items-center justify-between gap-3 py-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                        <span className="text-gray-600">{p.name}</span>
                       </div>
-                    )
-                  }
-
-                  return (
-                    <div key={item.site} className="border rounded-lg p-3">
-                      <p className="text-sm font-semibold text-gray-700 mb-3 text-center">{item.site}</p>
-                      <div className="flex justify-around">
-                        <MiniDonut pct={malePct} color="#3b82f6" label="🚹 Male" used={item.maleUsed} total={item.maleTotal} />
-                        <MiniDonut pct={femalePct} color="#ec4899" label="🚺 Female" used={item.femaleUsed} total={item.femaleTotal} />
-                      </div>
+                      <span className="font-semibold" style={{ color: p.color }}>
+                        {p.value} μg/m³
+                      </span>
                     </div>
-                  )
-                })}
-              </div>
-            </div>
+                  ))}
+                </div>
+              )
+            }}
+          />
+          {Object.keys(pm25Data[0] || {})
+            .filter(key => key !== "index" && !key.endsWith("_time"))
+            .map((site, i) => (
+              <Line
+                key={site}
+                type="monotone"
+                dataKey={site}
+                stroke={colors[i % colors.length]}
+                name={site}
+                dot={false}
+                connectNulls
+                strokeWidth={selectedSites.includes(site) ? 2 : 0}
+                hide={!selectedSites.includes(site)}
+              />
+            ))}
+        </LineChart>
+      </ResponsiveContainer>
+
+      {/* Summary badges */}
+      <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t">
+        {Object.keys(pm25Data[0] || {})
+          .filter(k => k !== "index" && !k.endsWith("_time"))
+          .map((site, i) => {
+            const latest = [...pm25Data].reverse().find(d => d[site] !== undefined)?.[site]
+            if (!selectedSites.includes(site)) return null
+            return (
+              <span key={site} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border"
+                style={{ borderColor: colors[i % colors.length], color: colors[i % colors.length] }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+                {site} · {latest ?? "N/A"} μg
+              </span>
+            )
+          })}
+      </div>
+    </div>
+  )}
+</div>
+{/* RESTROOM */}
+<div className="bg-white p-4 rounded shadow">
+  <div className="flex items-center justify-between mb-4">
+    <h2 className="text-xl font-bold text-black">Restroom Usage</h2>
+    <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+      {(['Both', 'Male', 'Female'] as const).map((opt) => (
+        <button
+          key={opt}
+          onClick={() => setRestroomFilter(opt)}
+          className="px-3 py-1 rounded-md text-sm font-medium transition-all"
+          style={{
+            backgroundColor: restroomFilter === opt ? '#fff' : 'transparent',
+            color: restroomFilter === opt
+              ? opt === 'Male' ? '#3b82f6' : opt === 'Female' ? '#ec4899' : '#111'
+              : '#6b7280',
+            boxShadow: restroomFilter === opt ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+          }}
+        >
+          {opt === 'Male' ? '🚹 Male' : opt === 'Female' ? '🚺 Female' : '👥 Both'}
+        </button>
+      ))}
+    </div>
+  </div>
+
+  {restroomLatest.length === 0 ? <p>No data</p> : (
+    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+      <ResponsiveContainer width="100%" height={restroomLatest.length * 60}>
+        <BarChart
+          data={restroomLatest.map(item => ({
+            site: item.site,
+            ...(restroomFilter !== 'Female' && { "🚹 Male": item.maleUsed }),
+            ...(restroomFilter !== 'Male' && { "🚺 Female": item.femaleUsed }),
+            maleUsed: item.maleUsed,
+            maleTotal: item.maleTotal,
+            femaleUsed: item.femaleUsed,
+            femaleTotal: item.femaleTotal,
+          }))}
+          layout="vertical"
+          margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
+          barCategoryGap="15%"
+          barGap={3}
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+          <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
+          <Tooltip
+            isAnimationActive={false}
+            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null
+              const d = payload[0]?.payload
+              return (
+                <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[170px]">
+                  <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
+                  {restroomFilter !== 'Female' && (
+                    <div className="flex justify-between gap-4">
+                      <span style={{ color: '#3b82f6' }} className="font-medium">🚹 Male</span>
+                      <span className="font-semibold">{d.maleUsed} / {d.maleTotal}</span>
+                    </div>
+                  )}
+                  {restroomFilter !== 'Male' && (
+                    <div className="flex justify-between gap-4">
+                      <span style={{ color: '#ec4899' }} className="font-medium">🚺 Female</span>
+                      <span className="font-semibold">{d.femaleUsed} / {d.femaleTotal}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            }}
+          />
+          <Legend verticalAlign="top" height={28} />
+          {restroomFilter !== 'Female' && (
+            <Bar dataKey="🚹 Male" fill="#3b82f6" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              <LabelList
+                dataKey="🚹 Male"
+                position="right"
+                formatter={(value: any) => `Used: ${value}`}
+                style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+              />
+            </Bar>
           )}
-        </div>
+          {restroomFilter !== 'Male' && (
+            <Bar dataKey="🚺 Female" fill="#ec4899" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+              <LabelList
+                dataKey="🚺 Female"
+                position="right"
+                formatter={(value: any) => `Used: ${value}`}
+                style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+              />
+            </Bar>
+          )}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</div>
 
         {/* PARKING */}
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-bold mb-4 text-black">Parking Usage</h2>
-          {parkingLatest.length === 0 ? <p>No data</p> : (
-            <ResponsiveContainer width="100%" height={parkingLatest.length * 40}>
-              <BarChart data={parkingLatest} layout="vertical" margin={{ top: 5, right: 20, left: 120, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" allowDecimals={false} />
-                <YAxis type="category" dataKey="site" tick={{ fontSize: 12 }} width={115} />
-                <Tooltip isAnimationActive={false} cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#111', marginBottom: '4px' }} />
-                <Legend verticalAlign="top" />
-                <Bar dataKey="available" name="Available" fill="#10b981" radius={[0, 4, 4, 0]} isAnimationActive={false} />
-                <Bar dataKey="used" name="Used" fill="#ef4444" radius={[0, 4, 4, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+<div className="bg-white p-4 rounded shadow">
+  <h2 className="text-xl font-bold mb-4 text-black">Parking Usage</h2>
+  {parkingLatest.length === 0 ? <p>No data</p> : (
+    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+      <ResponsiveContainer width="100%" height={parkingLatest.length * 44}>
+        <BarChart
+          data={parkingLatest}
+          layout="vertical"
+          margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
+          barCategoryGap="30%"
+        >
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
+          <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
+          <Tooltip
+            isAnimationActive={false}
+            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null
+              const used = payload.find((p: any) => p.dataKey === "used")?.value ?? 0
+              const available = payload.find((p: any) => p.dataKey === "available")?.value ?? 0
+              const total = (used as number) + (available as number)
+              const pct = total > 0 ? Math.round(((used as number) / total) * 100) : 0
+              return (
+                <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[160px]">
+                  <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
+                  <div className="flex justify-between gap-4">
+                    <span style={{ color: '#ef4444' }} className="font-medium">Used</span>
+                    <span className="font-semibold">{used} / {total}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span style={{ color: '#10b981' }} className="font-medium">Available</span>
+                    <span className="font-semibold">{available}</span>
+                  </div>
+                  <div className="mt-1 pt-1 border-t">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Occupancy</span>
+                      <span className="font-bold">{pct}%</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            }}
+          />
+          <Legend verticalAlign="top" height={28} />
+          <Bar dataKey="available" name="Available" stackId="a" fill="#10b981" isAnimationActive={false} />
+          <Bar dataKey="used" name="Used" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} isAnimationActive={false}>
+            <LabelList
+              dataKey="used"
+              position="right"
+              formatter={(value: any) => `Used: ${value}`}
+              style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+            />
+
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</div>
 
         {/* TEMPERATURE */}
-        <div className="bg-white p-4 rounded shadow">
-          <h2 className="text-xl font-bold mb-4 text-black">Temperature Trend</h2>
-          {tempData.length === 0 ? <p>No data</p> : (
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              <div className="grid grid-cols-2 gap-3">
-                {Object.keys(tempData[0] || {})
-                  .filter(key => key !== "index" && !key.endsWith("_time"))
-                  .map((site, i) => {
-                    const siteData = tempData.map(d => ({
-                      index: d.index, temp: d[site], time: d[`${site}_time`]
-                    })).filter(d => d.temp !== undefined)
+<div className="bg-white p-4 rounded shadow">
+  <h2 className="text-xl font-bold mb-4 text-black">Temperature</h2>
+  {tempData.length === 0 ? <p>No data</p> : (() => {
+    const latestTemp = Object.keys(tempData[0] || {})
+      .filter(k => k !== "index" && !k.endsWith("_time"))
+      .map(site => {
+        const latest = [...tempData].reverse().find(d => d[site] !== undefined)
+        return {
+          site,
+          temp: latest?.[site] ?? null,
+          time: latest?.[`${site}_time`] ?? null,
+        }
+      })
+      .filter(d => d.temp !== null)
+      .sort((a, b) => b.temp - a.temp)
 
-                    return (
-                      <div key={site} className="border rounded-lg p-2">
-                        <p className="text-xs font-semibold mb-1" style={{ color: colors[i % colors.length] }}>{site}</p>
-                        <ResponsiveContainer width="100%" height={120}>
-                          <LineChart data={siteData} margin={{ top: 5, right: 10, left: -10, bottom: 15 }}>
-                            <YAxis domain={["dataMin - 2", "dataMax + 2"]}
-                              tick={{ fontSize: 16, fill: colors[i % colors.length] }} unit="°C" width={75} />
-                            <XAxis dataKey="index"
-                              tick={{ fontSize: 16, fill: colors[i % colors.length] }}
-                              label={{ value: "ครั้งที่", position: "insideBottomRight", offset: -5, fontSize: 10 }} />
-                            <Tooltip
-                              content={({ active, payload }) => {
-                                if (!active || !payload?.length) return null
-                                return (
-                                  <div className="bg-white border rounded shadow p-2 text-base text-black">
-                                    <p className="font-medium mb-1">{site}</p>
-                                    <p style={{ color: colors[i % colors.length] }}>🕒 {payload[0]?.payload?.time}</p>
-                                    <p style={{ color: colors[i % colors.length] }}>🌡️ {payload[0]?.value}°C</p>
-                                  </div>
-                                )
-                              }}
-                            />
-                            <Line type="monotone" dataKey="temp" stroke={colors[i % colors.length]}
-                              dot={false} strokeWidth={2} connectNulls />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )
-                  })}
-              </div>
-            </div>
-          )}
-        </div>
+    const minTemp = Math.min(...latestTemp.map(d => d.temp))
+    const maxTemp = Math.max(...latestTemp.map(d => d.temp))
+
+    return (
+      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+        <ResponsiveContainer width="100%" height={latestTemp.length * 44}>
+          <BarChart
+            data={latestTemp}
+            layout="vertical"
+            margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
+            barCategoryGap="35%"
+          >
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+            <XAxis
+              type="number"
+              domain={[Math.floor(minTemp - 2), Math.ceil(maxTemp + 2)]}
+              tick={{ fontSize: 11 }}
+              unit="°C"
+            />
+            <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
+            <Tooltip
+              isAnimationActive={false}
+              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const d = payload[0]?.payload
+                return (
+                  <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[150px]">
+                    <p className="font-semibold border-b pb-1 mb-1">{label}</p>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">🌡️ Temp</span>
+                      <span className="font-bold">{d.temp}°C</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">🕒 Time</span>
+                      <span>{d.time}</span>
+                    </div>
+                  </div>
+                )
+              }}
+            />
+            <Bar
+  dataKey="temp"
+  radius={[0, 4, 4, 0]}
+  isAnimationActive={false}
+  shape={(props: any) => {
+    const { x, y, width, height, index } = props
+    const entry = latestTemp[index]
+    const ratio = maxTemp > minTemp ? (entry.temp - minTemp) / (maxTemp - minTemp) : 0.5
+    const r = Math.round(255 * ratio)
+    const b = Math.round(255 * (1 - ratio))
+    return (
+      <rect
+        x={x} y={y}
+        width={width} height={height}
+        fill={`rgb(${r}, 100, ${b})`}
+        rx={4} ry={4}
+      />
+    )
+  }}
+>
+  <LabelList
+    dataKey="temp"
+    position="right"
+    formatter={(value: any) => `${value}°C`}
+    style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+  />
+</Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    )
+  })()}
+</div>
 
       </div>
     </div>
