@@ -1,9 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRequireAuth } from "@/app/lib/hooks/useRequireAuth"
 import Navbar from "@/components/layout/Navbar"
 import DashboardNav from "@/components/layout/dashboard"
-import { useState,useEffect } from "react"
+
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const authorized = useRequireAuth()
@@ -13,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMounted(true)
   }, [])
 
-  if (!mounted) return null 
+  if (!mounted) return null
 
   if (!authorized) {
     return (

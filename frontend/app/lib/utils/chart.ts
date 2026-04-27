@@ -8,10 +8,7 @@ export const buildMultiSitePm25Chart = (data: any[]) => {
     if (!bySite[item.site]) bySite[item.site] = []
     bySite[item.site].push({
       pm25: Number(item.pm25) || 0,
-      time: new Date(item.timestamp).toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time: new Date(item.timestamp).toISOString().slice(11, 16)
     })
   })
 
@@ -69,10 +66,7 @@ export const buildMultiSiteTempChart = (data: any[]) => {
     if (!bySite[item.site]) bySite[item.site] = []
     bySite[item.site].push({
       temperature: Number(item.temperature) || 0,
-      time: new Date(item.timestamp).toLocaleTimeString("th-TH", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
+      time: new Date(item.timestamp).toISOString().slice(11, 16)
     })
   })
 

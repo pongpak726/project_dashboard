@@ -4,27 +4,31 @@ const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 
 exports.getWeather = async (req, res, next) => {
-  const { site, limit } = req.query
+  const { site, limit, startDate, endDate } = req.query  // เพิ่ม startDate, endDate
   const perDevice = Number(limit) || 50
 
+  const timestampFilter = {}
+  if (startDate) timestampFilter.gte = new Date(startDate)
+  if (endDate) timestampFilter.lte = new Date(endDate)
+
   try {
-    // 1. หา device ทั้งหมดก่อน
     const devices = await prisma.device.findMany({
       where: site ? { siteName: site } : {}
     })
 
-    // 2. query แต่ละ device อย่างละ 50
     const results = await Promise.all(
       devices.map(device =>
         prisma.weather.findMany({
-          where: { deviceId: device.id },
+          where: {
+            deviceId: device.id,
+            ...(Object.keys(timestampFilter).length > 0 && { timestamp: timestampFilter }) // เพิ่มตรงนี้
+          },
           orderBy: { timestamp: "desc" },
           take: perDevice
         })
       )
     )
 
-    // 3. รวมและเรียงใหม่
     const data = results.flat().sort((a, b) =>
       new Date(b.timestamp) - new Date(a.timestamp)
     )
@@ -39,7 +43,13 @@ exports.getWeather = async (req, res, next) => {
 
 exports.getRestroom = async (req, res, next) => {
   const { site, limit } = req.query
+  const startDate = req.query.startDate ? decodeURIComponent(req.query.startDate) : undefined
+  const endDate = req.query.endDate ? decodeURIComponent(req.query.endDate) : undefined
   const perDevice = Number(limit) || 50
+
+  const timestampFilter = {}
+  if (startDate) timestampFilter.gte = new Date(startDate)
+  if (endDate) timestampFilter.lte = new Date(endDate)
 
   try {
     const devices = await prisma.device.findMany({
@@ -49,7 +59,10 @@ exports.getRestroom = async (req, res, next) => {
     const results = await Promise.all(
       devices.map(device =>
         prisma.restroom.findMany({
-          where: { deviceId: device.id },
+          where: {
+            deviceId: device.id,
+            ...(Object.keys(timestampFilter).length > 0 && { timestamp: timestampFilter })
+          },
           orderBy: { timestamp: "desc" },
           take: perDevice
         })
@@ -67,8 +80,12 @@ exports.getRestroom = async (req, res, next) => {
 }
 
 exports.getParking = async (req, res, next) => {
-  const { site, limit } = req.query
+  const { site, limit, startDate, endDate } = req.query
   const perDevice = Number(limit) || 50
+
+   const timestampFilter = {}
+  if (startDate) timestampFilter.gte = new Date(startDate)
+  if (endDate) timestampFilter.lte = new Date(endDate)
 
   try {
     const devices = await prisma.device.findMany({
@@ -151,94 +168,21 @@ exports.getOverview = async (req, res, next) => {
 }
 
 
+exports.getDevices = async (req, res, next) => {
+  try{
+  const data = await prisma.device.findMany({
+    select: {
+      id: true,
+      siteName: true,
+      lat: true,
+      lon: true
+    }
+  })
+
+  res.json({ success: true, data })
+}catch (err) {
+    next(err)
+  }
+}
 
 
-// exports.getRestroom = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getRestroom({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Restroom retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getWeather = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getWeather({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Weather retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getOverview = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const sites = Array.isArray(site) ? site : [site]
-
-//     const results = await Promise.all(
-//       sites.map(async (s) => {
-//         const [weather, restroom, parking] = await Promise.all([
-//           externalService.getWeather({ site: s, limit: Number(limit) }),
-//           externalService.getRestroom({ site: s, limit: Number(limit) }),
-//           externalService.getParking({ site: s, limit: Number(limit) })
-//         ])
-
-//         return {
-//           site: s,
-//           weather,
-//           restroom,
-//           parking
-//         }
-//       })
-//     )
-
-//     res.json({
-//       success: true,
-//       message: "Overview retrieved successfully",
-//       data: results
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getParking = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getParking({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Parking retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
