@@ -58,8 +58,8 @@ export default function WeatherPage() {
   const csv = Papa.unparse(data.map(item => ({
     Location: item.location,
     Device: item.deviceId,
-    "PM2.5 (μg/m³)": item.pm25,
-    "Temperature (°C)": item.temperature,
+    "PM2.5 (ug/m3)": item.pm25,        
+    "Temperature (C)": item.temperature, 
     "Humidity (%)": item.humidity,
     Timestamp: item.timestamp,
   })))
