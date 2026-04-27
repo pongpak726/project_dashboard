@@ -7,6 +7,7 @@ const userRoute = require("./routes/user.route");
 const authRoutes = require("./routes/auth.routes")
 const errorHandler = require("./middleware/error");
 const dashboardRoutes = require("./routes/external.routes")
+const vmsRoutes = require("./routes/vms.routes")
 
 require("./utils/cron")
 
@@ -21,6 +22,9 @@ app.use(helmet());
 app.use("/api/users", userRoute);
 app.use("/api/auth",authRoutes) ;
 app.use("/api/dashboard", dashboardRoutes);
+
+app.use("/api/vms",vmsRoutes)
+app.use("/uploads", express.static("uploads"))
 
 // health check
 app.get("/", (req, res) => {

@@ -77,3 +77,30 @@ model Restroom {
   @@unique([deviceId, timestamp])
   @@index([timestamp])
 }
+
+model VMS {
+  id           String   @id              // เช่น "bangkok_01:vms-001"
+  siteName     String
+  lat          Float?
+  lon          Float?
+
+  currentImage String?                  // URL ภาพล่าสุด
+  updatedAt    DateTime @updatedAt
+
+  logs         VMSLog[]
+
+  @@index([siteName])
+}
+
+
+model VMSLog {
+  id        String   @id @default(uuid())
+  vmsId     String
+  imageUrl  String
+  timestamp DateTime
+
+  vms VMS @relation(fields: [vmsId], references: [id])
+
+  @@unique([vmsId, timestamp])
+  @@index([timestamp])
+}
