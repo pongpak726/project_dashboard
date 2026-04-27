@@ -49,6 +49,9 @@ export default function RestroomPage() {
 
   const totalPages = Math.ceil(data.length / PAGE_SIZE)
   const paginated = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  // เพิ่ม helper แยก composite id
+const parseSiteName = (deviceId: string) => deviceId.split(":")[0]
+const parseDeviceId = (deviceId: string) => deviceId.split(":")[1]
 
   const exportCSV = () => {
   const csv = Papa.unparse(data.map(item => ({
@@ -161,8 +164,8 @@ const exportPDF = () => {
                     key={`${item.deviceId}-${item.timestamp}-${index}`}
                     className="border-t hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium">{item.siteName}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                    <td className="px-4 py-3 font-medium">{parseSiteName(item.deviceId)}</td>
+                    <td className="px-4 py-3 text-gray-500">{parseDeviceId(item.deviceId)}</td>
                     <td className="px-4 py-3 text-center">
                       {item.maleAvailable} / {item.maleStalls}
                     </td>

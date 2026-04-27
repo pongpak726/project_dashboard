@@ -22,3 +22,58 @@ enum Role {
   ADMIN
   SUPER_ADMIN
 }
+
+model Device {
+  id       String @id   // ✅ "siteName:deviceId"
+  siteName String
+  lat      Float
+  lon      Float
+
+  weatherLogs  Weather[]
+  parkingLogs  Parking[]
+  restroomLogs Restroom[]
+
+  @@index([siteName])
+}
+
+model Weather {
+  id            String   @id @default(uuid())
+  deviceId      String
+  temperature   Float
+  humidity      Float
+  pm25          Float
+  rain          Float?
+  windSpeed     Float?
+  windDirection Float?
+  timestamp     DateTime
+
+  device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])
+}
+
+model Parking {
+  id        String   @id @default(uuid())
+  deviceId  String
+  capacity  Int
+  available Int?
+  timestamp DateTime
+
+  device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])
+}
+
+model Restroom {
+  id              String   @id @default(uuid())
+  deviceId        String
+  maleStalls      Int
+  maleAvailable   Int
+  femaleStalls    Int
+  femaleAvailable Int
+  timestamp       DateTime
+
+  device Device @relation(fields: [deviceId], references: [id])
+  @@unique([deviceId, timestamp])
+  @@index([timestamp])
+}
