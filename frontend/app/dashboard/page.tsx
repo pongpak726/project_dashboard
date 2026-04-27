@@ -116,7 +116,7 @@ export default function OverviewPage() {
           )
           return sorted.slice(0, 1).map((w: any) => ({
             site: d.site,
-            deviceId: w.deviceId,
+            deviceId: w.deviceId.split(":")[1], 
             pm25: w.pm25,
             temperature: w.temperature,
             humidity: w.humidity,
