@@ -151,94 +151,21 @@ exports.getOverview = async (req, res, next) => {
 }
 
 
+exports.getDevices = async (req, res, next) => {
+  try{
+  const data = await prisma.device.findMany({
+    select: {
+      id: true,
+      siteName: true,
+      lat: true,
+      lon: true
+    }
+  })
+
+  res.json({ success: true, data })
+}catch (err) {
+    next(err)
+  }
+}
 
 
-// exports.getRestroom = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getRestroom({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Restroom retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getWeather = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getWeather({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Weather retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getOverview = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const sites = Array.isArray(site) ? site : [site]
-
-//     const results = await Promise.all(
-//       sites.map(async (s) => {
-//         const [weather, restroom, parking] = await Promise.all([
-//           externalService.getWeather({ site: s, limit: Number(limit) }),
-//           externalService.getRestroom({ site: s, limit: Number(limit) }),
-//           externalService.getParking({ site: s, limit: Number(limit) })
-//         ])
-
-//         return {
-//           site: s,
-//           weather,
-//           restroom,
-//           parking
-//         }
-//       })
-//     )
-
-//     res.json({
-//       success: true,
-//       message: "Overview retrieved successfully",
-//       data: results
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
-
-// exports.getParking = async (req, res, next) => {
-//   try {
-//     const { site, limit } = req.query
-
-//     const data = await externalService.getParking({
-//       site,
-//       limit: Number(limit)
-//     })
-
-//     res.json({
-//       success: true,
-//       message: "Parking retrieved successfully",
-//       data
-//     })
-//   } catch (err) {
-//     next(err)
-//   }
-// }
