@@ -1,26 +1,36 @@
 const externalService = require("../services/external.service")
 
-const prisma = require("../prisma")
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
 
 exports.getWeather = async (req, res, next) => {
   const { site, limit } = req.query
+  const perDevice = Number(limit) || 50
 
-  try{
-    const where = site
-      ? { device: { siteName: site } }
-      : {}
-
-    const data = await prisma.weather.findMany({
-      where,
-      orderBy: { timestamp: "desc" },
-      take: Number(limit) || 10
+  try {
+    // 1. หา device ทั้งหมดก่อน
+    const devices = await prisma.device.findMany({
+      where: site ? { siteName: site } : {}
     })
 
-    res.json({
-      success: true,
-      data
-    })
-  } catch (err){
+    // 2. query แต่ละ device อย่างละ 50
+    const results = await Promise.all(
+      devices.map(device =>
+        prisma.weather.findMany({
+          where: { deviceId: device.id },
+          orderBy: { timestamp: "desc" },
+          take: perDevice
+        })
+      )
+    )
+
+    // 3. รวมและเรียงใหม่
+    const data = results.flat().sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    )
+
+    res.json({ success: true, count: data.length, data })
+  } catch (err) {
     next(err)
   }
 }
@@ -29,78 +39,108 @@ exports.getWeather = async (req, res, next) => {
 
 exports.getRestroom = async (req, res, next) => {
   const { site, limit } = req.query
-  try{
-    const where = site
-      ? { device: { siteName: site } }
-      : {}
+  const perDevice = Number(limit) || 50
 
-    const data = await prisma.restroom.findMany({
-      where,
-      orderBy: { timestamp: "desc" },
-      take: Number(limit) || 10
+  try {
+    const devices = await prisma.device.findMany({
+      where: site ? { siteName: site } : {}
     })
 
-    res.json({
-      success: true,
-      data
-    })
-  } catch (err){
+    const results = await Promise.all(
+      devices.map(device =>
+        prisma.restroom.findMany({
+          where: { deviceId: device.id },
+          orderBy: { timestamp: "desc" },
+          take: perDevice
+        })
+      )
+    )
+
+    const data = results.flat().sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    )
+
+    res.json({ success: true, count: data.length, data })
+  } catch (err) {
     next(err)
   }
 }
-
 
 exports.getParking = async (req, res, next) => {
   const { site, limit } = req.query
-  try{
-    const where = site
-      ? { device: { siteName: site } }
-      : {}
+  const perDevice = Number(limit) || 50
 
-    const data = await prisma.parking.findMany({
-      where,
-      orderBy: { timestamp: "desc" },
-      take: Number(limit) || 10
+  try {
+    const devices = await prisma.device.findMany({
+      where: site ? { siteName: site } : {}
     })
 
-    res.json({
-      success: true,
-      data
-    })
-  } catch (err){
+    const results = await Promise.all(
+      devices.map(device =>
+        prisma.parking.findMany({
+          where: { deviceId: device.id },
+          orderBy: { timestamp: "desc" },
+          take: perDevice
+        })
+      )
+    )
+
+    const data = results.flat().sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    )
+
+    res.json({ success: true, count: data.length, data })
+  } catch (err) {
     next(err)
   }
 }
-
 
 exports.getOverview = async (req, res, next) => {
   const { site, limit } = req.query
   const sites = Array.isArray(site) ? site : [site]
+  const perDevice = Number(limit) || 50
 
   try {
     const results = await Promise.all(
       sites.map(async (s) => {
-        const where = s ? { device: { siteName: s } } : {}
+        const devices = await prisma.device.findMany({
+          where: s ? { siteName: s } : {}
+        })
 
-        const [weather, restroom, parking] = await Promise.all([
-          prisma.weather.findMany({
-            where,
-            orderBy: { timestamp: "desc" },
-            take: Number(limit) || 10
-          }),
-          prisma.restroom.findMany({
-            where,
-            orderBy: { timestamp: "desc" },
-            take: Number(limit) || 10
-          }),
-          prisma.parking.findMany({
-            where,
-            orderBy: { timestamp: "desc" },
-            take: Number(limit) || 10
-          })
+        const [weatherArr, restroomArr, parkingArr] = await Promise.all([
+          Promise.all(devices.map(d =>
+            prisma.weather.findMany({
+              where: { deviceId: d.id },
+              orderBy: { timestamp: "desc" },
+              take: perDevice
+            })
+          )),
+          Promise.all(devices.map(d =>
+            prisma.restroom.findMany({
+              where: { deviceId: d.id },
+              orderBy: { timestamp: "desc" },
+              take: perDevice
+            })
+          )),
+          Promise.all(devices.map(d =>
+            prisma.parking.findMany({
+              where: { deviceId: d.id },
+              orderBy: { timestamp: "desc" },
+              take: perDevice
+            })
+          ))
         ])
 
-        return { site: s, weather, restroom, parking }
+        const sort = (arr) => arr.flat().sort((a, b) =>
+          new Date(b.timestamp) - new Date(a.timestamp)
+        )
+
+        return {
+          site: s,
+          weather: sort(weatherArr),
+          restroom: sort(restroomArr),
+          parking: sort(parkingArr)
+        }
       })
     )
 

@@ -7,15 +7,14 @@ const SITES = ["bangkok_01", "Sikhio-Outbound", "Sikhio-Inbound","Rest Area KM 1
 cron.schedule("*/5 * * * *", async () => {
   try {
     console.log("Ingesting all sites...")
-    await Promise.allSettled(  // ✅ เปลี่ยนจาก Promise.all → allSettled
-      SITES.map(async site => {
-        try {
-          await ingestAll({ site, limit: 50 })
-        } catch (err) {
-          console.error(`Ingest failed for ${site}:`, err.message)  // ✅ log แยกต่อ site
-        }
-      })
-    )
+    // ✅ รันทีละ site ไม่ parallel
+    for (const site of SITES) {
+      try {
+        await ingestAll({ site, limit: 50 })
+      } catch (err) {
+        console.error(`Ingest failed for ${site}:`, err.message)
+      }
+    }
     console.log("Done ingest")
   } catch (err) {
     console.error("Cron error:", err.message)

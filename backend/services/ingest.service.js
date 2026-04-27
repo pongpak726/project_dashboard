@@ -1,5 +1,6 @@
 const externalService = require("./external.service")
-const prisma = require("../prisma")
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
 const pLimit = require("p-limit").default
 
 const concurrency = pLimit(10)
@@ -91,9 +92,7 @@ const ingestParking = async ({ site, limit }) => {
 }
 
 exports.ingestAll = async ({ site, limit }) => {
-  await Promise.all([
-    ingestWeather({ site, limit }),
-    ingestRestroom({ site, limit }),
-    ingestParking({ site, limit })
-  ])
+  await ingestWeather({ site, limit })
+  await ingestRestroom({ site, limit })
+  await ingestParking({ site, limit })
 }
