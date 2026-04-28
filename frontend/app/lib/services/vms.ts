@@ -9,3 +9,9 @@ export const getVMSList = async (site?: string) => {
 
 export const getVMSLogs = (id: string, limit = 50) =>
   apiClient(`/vms/logs?id=${encodeURIComponent(id)}&limit=${limit}`)
+
+export const updateVMSLocation = (id: string, lat: number, lon: number) =>
+  apiClient(`/vms/${encodeURIComponent(id)}/location`, {
+    method: "PATCH",
+    body: JSON.stringify({ lat, lon })
+  })

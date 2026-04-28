@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getVMSList, getVMSLogs } from "@/app/lib/services/vms"
+import { getVMSList, getVMSLogs, updateVMSLocation } from "@/app/lib/services/vms"
 import { useResizeDelay } from "@/app/lib/hooks/useResizeDelay"
 
 
@@ -10,6 +10,8 @@ type VMS = {
   siteName: string
   currentImage: string | null
   updatedAt: string
+  lat?: number | null
+  lon?: number | null
 }
 
 type VMSLog = {
@@ -19,7 +21,6 @@ type VMSLog = {
   timestamp: string
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export default function VMSPage() {
   const [vmsList, setVmsList] = useState<VMS[]>([])
@@ -29,6 +30,10 @@ export default function VMSPage() {
   const [logsLoading, setLogsLoading] = useState(false)
   const [logLimit, setLogLimit] = useState(20)
   const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ?? ""
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingVMS, setEditingVMS] = useState<VMS | null>(null)
+  const [latInput, setLatInput] = useState("")
+  const [lonInput, setLonInput] = useState("")
 
   useEffect(() => {
     const load = async () => {
@@ -75,7 +80,8 @@ export default function VMSPage() {
     )
   }
 
-  return (
+ return (
+  <>
     <div className="p-6 space-y-6">
 
       {/* VMS Grid — ภาพล่าสุดทุกจอ */}
@@ -116,6 +122,18 @@ export default function VMSPage() {
                   <p className="text-xs text-gray-400 mt-0.5">
                     🕒 {new Date(vms.updatedAt).toLocaleString("th-TH")}
                   </p>
+                  <button
+                    className="mt-2 text-xs text-blue-500 hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingVMS(vms)
+                      setLatInput(String(vms.lat ?? ""))
+                      setLonInput(String(vms.lon ?? ""))
+                      setIsModalOpen(true)
+                    }}
+                  >
+                    ✏️ Edit Location
+                  </button>
                 </div>
               </div>
             ))}
@@ -173,5 +191,84 @@ export default function VMSPage() {
         </div>
       )}
     </div>
-  )
+
+    {/* ==== modal ==== */}
+    {isModalOpen && editingVMS && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+
+          <h2 className="text-lg font-bold mb-4 text-black">
+            Edit Location
+          </h2>
+
+          <p className="text-sm text-gray-500 mb-3">
+            {editingVMS.id}
+          </p>
+
+          <div className="space-y-3">
+            <input
+              type="number"
+              placeholder="Latitude"
+              value={latInput}
+              onChange={(e) => setLatInput(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm text-black"
+            />
+
+            <input
+              type="number"
+              placeholder="Longitude"
+              value={lonInput}
+              onChange={(e) => setLonInput(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm text-black"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 mt-5">
+            <button
+              className="px-3 py-1 text-sm border rounded"
+              onClick={() => {
+                setIsModalOpen(false)
+                setEditingVMS(null)
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="px-3 py-1 text-sm bg-black text-white rounded"
+              onClick={async () => {
+                try {
+                  const lat = parseFloat(latInput)
+                  const lon = parseFloat(lonInput)
+
+                  if (isNaN(lat) || isNaN(lon)) {
+                    alert("Invalid lat/lon")
+                    return
+                  }
+
+                  await updateVMSLocation(editingVMS.id, lat, lon)
+
+                  const res = await getVMSList()
+                  setVmsList(res.data || [])
+
+                  const updated = res.data.find((d: VMS) => d.id === editingVMS.id)
+                  setSelectedVMS(updated)
+
+                  setIsModalOpen(false)
+                  setEditingVMS(null)
+
+                } catch (err) {
+                  console.error(err)
+                }
+              }}
+            >
+              Save
+            </button>
+          </div>
+
+        </div>
+      </div>
+    )}
+  </>
+)
 }

@@ -97,3 +97,26 @@ exports.getVMSLogs = async (req, res, next) => {
     next(err)
   }
 }
+
+exports.updateVMSLocation = async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const { lat, lon } = req.body
+
+    if (!id) {
+      return res.status(400).json({ message: "Missing id" })
+    }
+
+    const data = await prisma.vMS.update({
+      where: { id },
+      data: {
+        lat: lat !== undefined ? Number(lat) : undefined,
+        lon: lon !== undefined ? Number(lon) : undefined
+      }
+    })
+
+    res.json({ success: true, data })
+  } catch (err) {
+    next(err)
+  }
+}
