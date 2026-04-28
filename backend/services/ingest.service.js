@@ -17,19 +17,21 @@ const makeDeviceId = (item) =>
 
 const upsertDevice = (item) => {
   const id = makeDeviceId(item)
-  const hasCoords = item.lat && item.lon  // ✅ declare แล้ว
+  const lat = parseFloat(Number(item.lat).toFixed(8)) || 0  // ✅ fallback 0
+  const lon = parseFloat(Number(item.lon).toFixed(8)) || 0  // ✅ fallback 0
+  const hasCoords = lat !== 0 || lon !== 0  // ✅ declare แล้ว
 
   return prisma.device.upsert({
     where: { id },
     update: {
       siteName: item.location || item.siteName || "unknown",
-      ...(hasCoords && { lat: item.lat, lon: item.lon })
+      ...(hasCoords && { lat, lon })
     },
     create: {
       id,
       siteName: item.location || item.siteName || "unknown",
-      lat: Number(item.lat) || 0,
-      lon: Number(item.lon) || 0
+      lat,
+      lon
     }
   })
 }
