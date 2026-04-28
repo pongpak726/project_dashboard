@@ -46,6 +46,7 @@ exports.login = async (data) => {
   // 🔥 return user only
   return {
     id: user.id,
+    username: user.username,
     role: user.role
   }
 }

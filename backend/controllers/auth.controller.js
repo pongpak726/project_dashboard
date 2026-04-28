@@ -1,5 +1,6 @@
 const authService = require("../services/auth.service")
 const { generateAccessToken, generateRefreshToken } = require("../utils/jwt")
+const logService = require("../services/log.service")
 
 exports.register = async (req, res, next) => {
   try {
@@ -13,6 +14,12 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const user = await authService.login(req.body)
+
+    // ✅ log ก่อนตอบ
+    await logService.createLoginLog({
+      user,
+      req
+    })
 
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken(user)

@@ -15,6 +15,8 @@ model User {
   role      Role     @default(USER)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  loginLogs LoginLog[]
 }
 
 enum Role {
@@ -24,7 +26,7 @@ enum Role {
 }
 
 model Device {
-  id       String @id   // ✅ "siteName:deviceId"
+  id       String  @id // ✅ "siteName:deviceId"
   siteName String
   lat      Decimal @db.Decimal(11, 8)
   lon      Decimal @db.Decimal(11, 8)
@@ -48,6 +50,7 @@ model Weather {
   timestamp     DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+
   @@unique([deviceId, timestamp])
   @@index([timestamp])
 }
@@ -60,6 +63,7 @@ model Parking {
   timestamp DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+
   @@unique([deviceId, timestamp])
   @@index([timestamp])
 }
@@ -74,24 +78,24 @@ model Restroom {
   timestamp       DateTime
 
   device Device @relation(fields: [deviceId], references: [id])
+
   @@unique([deviceId, timestamp])
   @@index([timestamp])
 }
 
 model VMS {
-  id           String   @id              // เช่น "bangkok_01:vms-001"
-  siteName     String
-  lat          Float?
-  lon          Float?
+  id       String @id // เช่น "bangkok_01:vms-001"
+  siteName String
+  lat      Float?
+  lon      Float?
 
-  currentImage String?                  // URL ภาพล่าสุด
+  currentImage String? // URL ภาพล่าสุด
   updatedAt    DateTime @updatedAt
 
-  logs         VMSLog[]
+  logs VMSLog[]
 
   @@index([siteName])
 }
-
 
 model VMSLog {
   id        String   @id @default(uuid())
@@ -103,4 +107,18 @@ model VMSLog {
 
   @@unique([vmsId, timestamp])
   @@index([timestamp])
+}
+
+model LoginLog {
+  id        String   @id @default(uuid())
+  userId    String
+  username  String
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
 }
