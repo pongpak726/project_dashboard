@@ -26,8 +26,8 @@ enum Role {
 model Device {
   id       String @id   // ✅ "siteName:deviceId"
   siteName String
-  lat      Float
-  lon      Float
+  lat      Decimal @db.Decimal(11, 8)
+  lon      Decimal @db.Decimal(11, 8)
 
   weatherLogs  Weather[]
   parkingLogs  Parking[]
