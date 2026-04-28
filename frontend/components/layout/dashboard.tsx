@@ -6,6 +6,7 @@ import { MdOutlineSpaceDashboard } from "react-icons/md"
 import { WiDaySunny } from "react-icons/wi"
 import { MdLocalParking } from "react-icons/md"
 import { MdWc } from "react-icons/md"
+import { MdTv } from "react-icons/md"
 
 export default function DashboardNav() {
   const pathname = usePathname()
@@ -15,6 +16,7 @@ export default function DashboardNav() {
     { name: "Weather",   href: "/dashboard/weather",  icon: <WiDaySunny size={24} /> },
     { name: "Parking",   href: "/dashboard/parking",  icon: <MdLocalParking size={24} /> },
     { name: "Restroom",  href: "/dashboard/restroom", icon: <MdWc size={24} /> },
+    { name: "VMS", href: "/dashboard/vms", icon: <MdTv size={24} /> }
   ]
 
   const navLinkClass = (href: string) => {
