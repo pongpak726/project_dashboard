@@ -53,39 +53,3 @@ exports.getParking = async ({ site, limit } = {}) => {
 }
 
 
-
-// exports.getRestroom = async ({ site = "Rest Area KM 120" , limit = 10 }) => {
-//   const params = { limit }
-
-//   if (site) {
-//     params.site_name = site
-//   }
-
-//   const url = buildUrl("restroom", params)
-
-//   const response = await fetch(url, {
-//     headers: {
-//       Authorization: `Bearer ${process.env.SECRET_API}`
-//     }
-//   })
-
-//   if (!response.ok) {
-//     throw new Error("Restroom API failed")
-//   }
-
-//   const data = await response.json()
-
-//   if (!data.data || !Array.isArray(data.data)) {
-//     throw new Error("Invalid restroom API format")
-//   }
-
-//   return data.data.map(item => ({
-//     siteName: item.site_name,
-//     deviceId: item.device_id,
-//     maleStalls: item.male_stalls,
-//     maleAvailable: item.male_available,
-//     femaleStalls: item.female_stalls,
-//     femaleAvailable: item.female_available,
-//     timestamp: item.created_at
-//   }))
-// }
