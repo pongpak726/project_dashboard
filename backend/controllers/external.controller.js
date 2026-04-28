@@ -154,6 +154,7 @@ exports.getOverview = async (req, res, next) => {
 
         return {
           site: s,
+          devices: devices.map(d => ({ id: d.id, lat: d.lat, lon: d.lon })),
           weather: sort(weatherArr),
           restroom: sort(restroomArr),
           parking: sort(parkingArr)

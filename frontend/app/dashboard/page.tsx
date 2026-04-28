@@ -1,11 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
+
+const SiteMap = dynamic(() => import("@/components/SiteMap"), { ssr: false })
 import { getOverview } from "@/app/lib/services/external"
 import { buildMultiSitePm25Chart, buildMultiSiteRestroomChart, buildMultiSiteTempChart } from "@/app/lib/utils/chart"
 import {
   LineChart, Line, XAxis, YAxis, Tooltip,
-  CartesianGrid, ResponsiveContainer, BarChart, Bar, Legend , ReferenceLine , LabelList ,Cell
+  CartesianGrid, ResponsiveContainer, BarChart, Bar, Legend, ReferenceLine, LabelList, Cell,
+  PieChart, Pie,
 } from "recharts"
 import { buildPmInsight, buildWeatherInsight } from "../lib/utils/insight"
 
@@ -16,6 +20,65 @@ import { buildMockLatestWeather, buildMockLatestParking, buildMockLatestRestroom
 // ===================================================
 
 const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#a855f7"]
+const PAGE_SIZE = 5
+
+type Tab = "weather" | "parking" | "restroom"
+
+function paginate(data: any[], currentPage: number) {
+  return data.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+}
+
+function totalPages(data: any[]) {
+  return Math.ceil(data.length / PAGE_SIZE)
+}
+
+function PaginationBar({
+  tab, data, page, setPage,
+}: {
+  tab: Tab
+  data: any[]
+  page: Record<Tab, number>
+  setPage: React.Dispatch<React.SetStateAction<Record<Tab, number>>>
+}) {
+  const total = totalPages(data)
+  const current = page[tab]
+  if (total <= 1) return null
+  return (
+    <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
+      <p>แสดง {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, data.length)} จาก {data.length} รายการ</p>
+      <div className="flex items-center gap-1">
+        <button onClick={() => setPage(p => ({ ...p, [tab]: 1 }))} disabled={current === 1}
+          className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">«</button>
+        <button onClick={() => setPage(p => ({ ...p, [tab]: p[tab] - 1 }))} disabled={current === 1}
+          className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">‹</button>
+        {Array.from({ length: total }, (_, i) => i + 1)
+          .filter(p => p === 1 || p === total || Math.abs(p - current) <= 1)
+          .reduce((acc: (number | string)[], p, idx, arr) => {
+            if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...")
+            acc.push(p)
+            return acc
+          }, [])
+          .map((p, i) => p === "..." ? (
+            <span key={`e-${i}`} className="px-2">...</span>
+          ) : (
+            <button key={p} onClick={() => setPage(prev => ({ ...prev, [tab]: p as number }))}
+              className={`px-3 py-1 rounded border transition ${current === p ? "bg-black text-white" : "hover:bg-gray-100"}`}>
+              {p}
+            </button>
+          ))}
+        <button onClick={() => setPage(p => ({ ...p, [tab]: p[tab] + 1 }))} disabled={current === total}
+          className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">›</button>
+        <button onClick={() => setPage(p => ({ ...p, [tab]: total }))} disabled={current === total}
+          className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">»</button>
+      </div>
+    </div>
+  )
+}
+
+function formatTs(ts: string | undefined | null) {
+  if (!ts) return "-"
+  return ts.replace("T", " ").slice(0, 19)
+}
 
 function PM25Badge({ value }: { value: number }) {
   const color =
@@ -42,7 +105,6 @@ export default function OverviewPage() {
   const [selectedSites, setSelectedSites] = useState<string[]>([])
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [page, setPage] = useState({ weather: 1, parking: 1, restroom: 1 })
-  const PAGE_SIZE = 5
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null)
   const [restroomFilter, setRestroomFilter] = useState<'Both' | 'Male' | 'Female'>('Both')
 
@@ -66,26 +128,37 @@ export default function OverviewPage() {
         const temp = buildMultiSiteTempChart(sortedWeather)
 
         // ---- PM2.5 ----
-         //setPm25Data(pm) // production
-         setPm25Data(buildMockPm25Data()) // mock
+         setPm25Data(pm) // production
+         //setPm25Data(buildMockPm25Data()) // mock
 
         const allSites = Object.keys(pm[0] || {}).filter(k => k !== "index" && !k.endsWith("_time"))
         setSelectedSites(allSites.slice(0, 5))
 
         // ---- Temperature ----
-        //setTempData(temp) // production
-         setTempData(buildMockTempData()) // mock
+        setTempData(temp) // production
+        //setTempData(buildMockTempData()) // mock
 
          //---- Latest Weather ----
          const latestWeatherData = res.data.flatMap((d: any) => {
+           const coordsById = Object.fromEntries(
+             (d.devices || []).map((dev: any) => [dev.id, { lat: dev.lat, lon: dev.lon }])
+           )
+           // fallback: ถ้า weather device ไม่มี coords ให้ใช้ device อื่นในไซต์ที่มี coords จริง
+           const siteCoords = (d.devices || []).find((dev: any) => dev.lat && dev.lon)
            const sorted = [...(d.weather || [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-           return sorted.slice(0, 1).map((w: any) => ({
-            site: d.site, deviceId: w.deviceId, pm25: w.pm25,
-             temperature: w.temperature, humidity: w.humidity, timestamp: w.timestamp,
-           }))
+           return sorted.slice(0, 1).map((w: any) => {
+             const direct = coordsById[w.deviceId]
+             const coords = (direct?.lat && direct?.lon) ? direct : siteCoords
+             return {
+               site: d.site, deviceId: w.deviceId, pm25: w.pm25,
+               temperature: w.temperature, humidity: w.humidity, timestamp: w.timestamp,
+               lat: coords?.lat,
+               lon: coords?.lon,
+             }
+           })
          })
-        //setLatestWeather(latestWeatherData) // production
-         setLatestWeather(buildMockLatestWeather()) // mock
+        setLatestWeather(latestWeatherData) // production
+        //setLatestWeather(buildMockLatestWeather()) // mock
 
         setUsageData(usage)
 
@@ -105,8 +178,8 @@ export default function OverviewPage() {
              timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         //setRestroomLatest(latestRestroomData) // production
-         setRestroomLatest(buildMockLatestRestroom()) // mock
+         setRestroomLatest(latestRestroomData) // production
+        //setRestroomLatest(buildMockLatestRestroom()) // mock
 
         // ---- Latest Parking ----
          const latestParkingData = res.data.map((d: any) => {
@@ -119,8 +192,8 @@ export default function OverviewPage() {
              used: latest.capacity - latest.available, timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         //setParkingLatest(latestParkingData) // production
-         setParkingLatest(buildMockLatestParking()) // mock
+         setParkingLatest(latestParkingData) // production
+         //setParkingLatest(buildMockLatestParking()) // mock
 
         const pmInsight = buildPmInsight(pm)
         const weatherInsight = buildWeatherInsight(weather)
@@ -140,6 +213,12 @@ export default function OverviewPage() {
     load()
   }, [])
 
+  const sortedWeatherData = useMemo(() => [...latestWeather].sort((a, b) => {
+    if (sortOrder === "asc") return a.pm25 - b.pm25
+    if (sortOrder === "desc") return b.pm25 - a.pm25
+    return 0
+  }), [latestWeather, sortOrder])
+
   if (loading) {
     return (
       <div className="p-6 space-y-4">
@@ -149,59 +228,6 @@ export default function OverviewPage() {
       </div>
     )
   }
-
-  const paginate = (data: any[], tab: "weather" | "parking" | "restroom") => {
-  const p = page[tab]
-  return data.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE)
-}
-
-const totalPages = (data: any[]) => Math.ceil(data.length / PAGE_SIZE)
-
-const PaginationBar = ({ tab, data }: { tab: "weather" | "parking" | "restroom", data: any[] }) => {
-  const total = totalPages(data)
-  const current = page[tab]
-  if (total <= 1) return null
-  return (
-    <>
-      <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
-        <p>แสดง {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, data.length)} จาก {data.length} รายการ</p>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setPage(p => ({ ...p, [tab]: 1 }))} disabled={current === 1}
-            className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">«</button>
-          <button onClick={() => setPage(p => ({ ...p, [tab]: p[tab] - 1 }))} disabled={current === 1}
-            className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">‹</button>
-          {Array.from({ length: total }, (_, i) => i + 1)
-            .filter(p => p === 1 || p === total || Math.abs(p - current) <= 1)
-            .reduce((acc: (number | string)[], p, idx, arr) => {
-              if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...")
-              acc.push(p)
-              return acc
-            }, [])
-            .map((p, i) => p === "..." ? (
-              <span key={`e-${i}`} className="px-2">...</span>
-            ) : (
-              <button key={p} onClick={() => setPage(prev => ({ ...prev, [tab]: p as number }))}
-                className={`px-3 py-1 rounded border transition ${current === p ? "bg-black text-white" : "hover:bg-gray-100"}`}>
-                {p}
-              </button>
-            ))}
-          <button onClick={() => setPage(p => ({ ...p, [tab]: p[tab] + 1 }))} disabled={current === total}
-            className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">›</button>
-          <button onClick={() => setPage(p => ({ ...p, [tab]: total }))} disabled={current === total}
-            className="px-2 py-1 rounded border disabled:opacity-30 hover:bg-gray-100">»</button>
-        </div>
-      </div>
-    </>
-  )
-}
-
-const sortedWeatherData = [...latestWeather].sort((a, b) => {
-  if (sortOrder === "asc") return a.pm25 - b.pm25
-  if (sortOrder === "desc") return b.pm25 - a.pm25
-  return 0
-})
-console.log("PM25 DATA:", pm25Data)
-console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
 
 
   return (
@@ -250,18 +276,18 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
               <tbody>
                 {latestWeather.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
-                ) : paginate(sortedWeatherData, "weather").map((item, i) => (
+                ) : paginate(sortedWeatherData, page.weather).map((item, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.site}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                    <td className="px-4 py-3 text-gray-500">{item.deviceId?.split(":").slice(1).join(":")}</td>
                     <td className="px-4 py-3 text-center"><PM25Badge value={item.pm25} /></td>
                     <td className="px-4 py-3 text-center">{item.temperature} °C</td>
                     <td className="px-4 py-3 text-center">{item.humidity} %</td>
-                    <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 ))}
               </tbody>
-            </table><PaginationBar tab="weather" data={latestWeather} /></>
+            </table><PaginationBar tab="weather" data={latestWeather} page={page} setPage={setPage} /></>
             
           )}
 
@@ -279,21 +305,21 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
               <tbody>
                 {parkingLatest.length === 0 ? (
                   <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
-                ) : paginate(parkingLatest, "parking").map((item, i) => (
+                ) : paginate(parkingLatest, page.parking).map((item, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.site}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                    <td className="px-4 py-3 text-gray-500">{item.deviceId?.split(":").slice(1).join(":")}</td>
                     <td className="px-4 py-3 text-center">{item.available} / {item.capacity}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.available === 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}>
                         {item.available === 0 ? "FULL" : "AVAILABLE"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 ))}
               </tbody>
-            </table><PaginationBar tab="parking" data={parkingLatest} /></>
+            </table><PaginationBar tab="parking" data={parkingLatest} page={page} setPage={setPage} /></>
           )}
 
           {activeTab === "restroom" && (
@@ -311,10 +337,10 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
               <tbody>
                 {restroomLatest.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
-                ) : paginate(restroomLatest, "restroom").map((item, i) => (
+                ) : paginate(restroomLatest, page.restroom).map((item, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.site}</td>
-                    <td className="px-4 py-3 text-gray-500">{item.deviceId}</td>
+                    <td className="px-4 py-3 text-gray-500">{item.deviceId?.split(":").slice(1).join(":")}</td>
                     <td className="px-4 py-3 text-center">{item.maleAvailable} / {item.maleTotal}</td>
                     <td className="px-4 py-3 text-center">{item.femaleAvailable} / {item.femaleTotal}</td>
                     <td className="px-4 py-3 text-center">
@@ -323,13 +349,19 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
                         {item.maleAvailable === 0 && item.femaleAvailable === 0 ? "FULL" : "AVAILABLE"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 ))}
               </tbody>
-            </table><PaginationBar tab="restroom" data={restroomLatest} /></>
+            </table><PaginationBar tab="restroom" data={restroomLatest} page={page} setPage={setPage} /></>
           )}
         </div>
+      </div>
+
+      {/* MAP */}
+      <div className="bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-bold text-black mb-4">Site Map</h2>
+        <SiteMap sites={latestWeather} restroom={restroomLatest} parking={parkingLatest} />
       </div>
 
       {/* CHARTS */}
@@ -405,7 +437,7 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
 
   {pm25Data.length === 0 ? <p>No data</p> : (
     <div style={{ pointerEvents: dropdownOpen ? 'none' : 'auto' }}>
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer debounce={350} width="100%" height={320}>
         <LineChart data={pm25Data} margin={{ left: -30, right: 10, top: 5, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
           {/* AQI reference lines */}
@@ -497,75 +529,79 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
   </div>
 
   {restroomLatest.length === 0 ? <p>No data</p> : (
-    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-      <ResponsiveContainer width="100%" height={restroomLatest.length * 60}>
-        <BarChart
-          data={restroomLatest.map(item => ({
-            site: item.site,
-            ...(restroomFilter !== 'Female' && { "🚹 Male": item.maleUsed }),
-            ...(restroomFilter !== 'Male' && { "🚺 Female": item.femaleUsed }),
-            maleUsed: item.maleUsed,
-            maleTotal: item.maleTotal,
-            femaleUsed: item.femaleUsed,
-            femaleTotal: item.femaleTotal,
-          }))}
-          layout="vertical"
-          margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
-          barCategoryGap="15%"
-          barGap={3}
-        >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-          <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
-          <Tooltip
-            isAnimationActive={false}
-            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-            content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null
-              const d = payload[0]?.payload
-              return (
-                <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[170px]">
-                  <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
-                  {restroomFilter !== 'Female' && (
-                    <div className="flex justify-between gap-4">
-                      <span style={{ color: '#3b82f6' }} className="font-medium">🚹 Male</span>
-                      <span className="font-semibold">{d.maleUsed} / {d.maleTotal}</span>
-                    </div>
-                  )}
-                  {restroomFilter !== 'Male' && (
-                    <div className="flex justify-between gap-4">
-                      <span style={{ color: '#ec4899' }} className="font-medium">🚺 Female</span>
-                      <span className="font-semibold">{d.femaleUsed} / {d.femaleTotal}</span>
-                    </div>
-                  )}
-                </div>
-              )
-            }}
-          />
-          <Legend verticalAlign="top" height={28} />
-          {restroomFilter !== 'Female' && (
-            <Bar dataKey="🚹 Male" fill="#3b82f6" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-              <LabelList
-                dataKey="🚹 Male"
-                position="right"
-                formatter={(value: any) => `Used: ${value}`}
-                style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
-              />
-            </Bar>
-          )}
-          {restroomFilter !== 'Male' && (
-            <Bar dataKey="🚺 Female" fill="#ec4899" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-              <LabelList
-                dataKey="🚺 Female"
-                position="right"
-                formatter={(value: any) => `Used: ${value}`}
-                style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
-              />
-            </Bar>
-          )}
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer debounce={350} width="100%" height={320}>
+      <BarChart
+        data={restroomLatest.map(item => ({
+          site: item.site,
+          ...(restroomFilter !== 'Female' && { "🚹 Male": item.maleUsed }),
+          ...(restroomFilter !== 'Male' && { "🚺 Female": item.femaleUsed }),
+          maleUsed: item.maleUsed,
+          maleTotal: item.maleTotal,
+          femaleUsed: item.femaleUsed,
+          femaleTotal: item.femaleTotal,
+        }))}
+        margin={{ top: 10, right: 20, left: 10, bottom: 60 }}
+        barCategoryGap="25%"
+        barGap={4}
+      >
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          dataKey="site"
+          tick={{ fontSize: 11 }}
+          interval={0}
+          angle={-35}
+          textAnchor="end"
+          height={70}
+        />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+        <Tooltip
+          isAnimationActive={false}
+          cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null
+            const d = payload[0]?.payload
+            return (
+              <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[170px]">
+                <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
+                {restroomFilter !== 'Female' && (
+                  <div className="flex justify-between gap-4">
+                    <span style={{ color: '#3b82f6' }} className="font-medium">🚹 Male</span>
+                    <span className="font-semibold">{d.maleUsed} / {d.maleTotal}</span>
+                  </div>
+                )}
+                {restroomFilter !== 'Male' && (
+                  <div className="flex justify-between gap-4">
+                    <span style={{ color: '#ec4899' }} className="font-medium">🚺 Female</span>
+                    <span className="font-semibold">{d.femaleUsed} / {d.femaleTotal}</span>
+                  </div>
+                )}
+              </div>
+            )
+          }}
+        />
+        <Legend verticalAlign="top" height={28} />
+        {restroomFilter !== 'Female' && (
+          <Bar dataKey="🚹 Male" fill="#3b82f6" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            <LabelList
+              dataKey="🚹 Male"
+              position="top"
+              formatter={(value: any) => value}
+              style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+            />
+          </Bar>
+        )}
+        {restroomFilter !== 'Male' && (
+          <Bar dataKey="🚺 Female" fill="#ec4899" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+            <LabelList
+              dataKey="🚺 Female"
+              position="top"
+              formatter={(value: any) => value}
+              style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
+            />
+          </Bar>
+        )}
+      </BarChart>
+    </ResponsiveContainer>
   )}
 </div>
 
@@ -573,61 +609,62 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
 <div className="bg-white p-4 rounded shadow">
   <h2 className="text-xl font-bold mb-4 text-black">Parking Usage</h2>
   {parkingLatest.length === 0 ? <p>No data</p> : (
-    <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-      <ResponsiveContainer width="100%" height={parkingLatest.length * 44}>
-        <BarChart
-          data={parkingLatest}
-          layout="vertical"
-          margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
-          barCategoryGap="30%"
-        >
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} />
-          <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
-          <Tooltip
-            isAnimationActive={false}
-            cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-            content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null
-              const used = payload.find((p: any) => p.dataKey === "used")?.value ?? 0
-              const available = payload.find((p: any) => p.dataKey === "available")?.value ?? 0
-              const total = (used as number) + (available as number)
-              const pct = total > 0 ? Math.round(((used as number) / total) * 100) : 0
-              return (
-                <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[160px]">
-                  <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
-                  <div className="flex justify-between gap-4">
-                    <span style={{ color: '#ef4444' }} className="font-medium">Used</span>
-                    <span className="font-semibold">{used} / {total}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span style={{ color: '#10b981' }} className="font-medium">Available</span>
-                    <span className="font-semibold">{available}</span>
-                  </div>
-                  <div className="mt-1 pt-1 border-t">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Occupancy</span>
-                      <span className="font-bold">{pct}%</span>
-                    </div>
-                  </div>
+    <ResponsiveContainer debounce={350} width="100%" height={320}>
+      <BarChart
+        data={parkingLatest}
+        margin={{ top: 10, right: 20, left: 10, bottom: 60 }}
+        barCategoryGap="35%"
+      >
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          dataKey="site"
+          tick={{ fontSize: 11 }}
+          interval={0}
+          angle={-35}
+          textAnchor="end"
+          height={70}
+        />
+        <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
+        <Tooltip
+          isAnimationActive={false}
+          cursor={{ fill: 'rgba(0,0,0,0.04)' }}
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null
+            const used = payload.find((p: any) => p.dataKey === "used")?.value ?? 0
+            const available = payload.find((p: any) => p.dataKey === "available")?.value ?? 0
+            const total = (used as number) + (available as number)
+            const pct = total > 0 ? Math.round(((used as number) / total) * 100) : 0
+            return (
+              <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[160px]">
+                <p className="font-semibold text-sm border-b pb-1 mb-1">{label}</p>
+                <div className="flex justify-between gap-4">
+                  <span style={{ color: '#ef4444' }} className="font-medium">Used</span>
+                  <span className="font-semibold">{used} / {total}</span>
                 </div>
-              )
-            }}
+                <div className="flex justify-between gap-4">
+                  <span style={{ color: '#10b981' }} className="font-medium">Available</span>
+                  <span className="font-semibold">{available}</span>
+                </div>
+                <div className="mt-1 pt-1 border-t flex justify-between">
+                  <span className="text-gray-500">Occupancy</span>
+                  <span className="font-bold">{pct}%</span>
+                </div>
+              </div>
+            )
+          }}
+        />
+        <Legend verticalAlign="top" height={28} />
+        <Bar dataKey="available" name="Available" stackId="a" fill="#10b981" isAnimationActive={false} />
+        <Bar dataKey="used" name="Used" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} isAnimationActive={false}>
+          <LabelList
+            dataKey="used"
+            position="top"
+            formatter={(value: any) => value}
+            style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
           />
-          <Legend verticalAlign="top" height={28} />
-          <Bar dataKey="available" name="Available" stackId="a" fill="#10b981" isAnimationActive={false} />
-          <Bar dataKey="used" name="Used" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} isAnimationActive={false}>
-            <LabelList
-              dataKey="used"
-              position="right"
-              formatter={(value: any) => `Used: ${value}`}
-              style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
-            />
-
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
   )}
 </div>
 
@@ -639,84 +676,83 @@ console.log("PM25 KEYS:", Object.keys(pm25Data[0] || {}))
       .filter(k => k !== "index" && !k.endsWith("_time"))
       .map(site => {
         const latest = [...tempData].reverse().find(d => d[site] !== undefined)
-        return {
-          site,
-          temp: latest?.[site] ?? null,
-          time: latest?.[`${site}_time`] ?? null,
-        }
+        return { site, temp: latest?.[site] ?? null }
       })
       .filter(d => d.temp !== null)
-      .sort((a, b) => b.temp - a.temp)
+
+    const avgTemp = (latestTemp.reduce((s, d) => s + d.temp, 0) / latestTemp.length).toFixed(1)
 
     const minTemp = Math.min(...latestTemp.map(d => d.temp))
     const maxTemp = Math.max(...latestTemp.map(d => d.temp))
 
+    const getTempColor = (temp: number) => {
+      const ratio = maxTemp > minTemp ? (temp - minTemp) / (maxTemp - minTemp) : 0.5
+      const r = Math.round(220 * ratio)
+      const b = Math.round(220 * (1 - ratio))
+      return `rgb(${r}, 100, ${b})`
+    }
+
+    // จัดกลุ่มตามค่าอุณหภูมิเหมือนกันเป๊ะ เรียงจากมากไปน้อย
+    const grouped = Object.entries(
+      latestTemp.reduce((acc, d) => {
+        const key = String(d.temp)
+        if (!acc[key]) acc[key] = []
+        acc[key].push(d)
+        return acc
+      }, {} as Record<string, typeof latestTemp>)
+    )
+      .map(([temp, sites]) => ({ temp: Number(temp), sites, label: `${temp}°C`, color: getTempColor(Number(temp)) }))
+      .sort((a, b) => b.temp - a.temp)
+
     return (
-      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-        <ResponsiveContainer width="100%" height={latestTemp.length * 44}>
-          <BarChart
-            data={latestTemp}
-            layout="vertical"
-            margin={{ top: 5, right: 70, left: 130, bottom: 5 }}
-            barCategoryGap="35%"
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis
-              type="number"
-              domain={[Math.floor(minTemp - 2), Math.ceil(maxTemp + 2)]}
-              tick={{ fontSize: 11 }}
-              unit="°C"
-            />
-            <YAxis type="category" dataKey="site" tick={{ fontSize: 11 }} width={125} />
-            <Tooltip
+      <div style={{ position: 'relative' }}>
+        {/* Center label — ต้องอยู่ก่อน ResponsiveContainer ให้ tooltip ลอยทับได้ */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -65%)',
+          textAlign: 'center', pointerEvents: 'none',
+        }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: '#111' }}>{avgTemp}°C</div>
+          <div style={{ fontSize: 11, color: '#6b7280' }}>Average</div>
+        </div>
+        <ResponsiveContainer debounce={350} width="100%" height={340}>
+          <PieChart>
+            <Pie
+              data={grouped}
+              dataKey="sites.length"
+              cx="50%"
+              cy="50%"
+              innerRadius={85}
+              outerRadius={130}
+              paddingAngle={3}
               isAnimationActive={false}
-              cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-              content={({ active, payload, label }) => {
+            >
+              {grouped.map((entry) => (
+                <Cell key={entry.label} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
-                const d = payload[0]?.payload
+                const g = payload[0]?.payload
                 return (
-                  <div className="bg-white border rounded-lg shadow-lg p-2 text-xs text-black space-y-1 min-w-[150px]">
-                    <p className="font-semibold border-b pb-1 mb-1">{label}</p>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">🌡️ Temp</span>
-                      <span className="font-bold">{d.temp}°C</span>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">🕒 Time</span>
-                      <span>{d.time}</span>
+                  <div className="bg-white border rounded-lg shadow-lg p-3 text-xs text-black min-w-[180px]">
+                    <p className="font-semibold text-sm border-b pb-1 mb-2" style={{ color: g.color }}>
+                      🌡️ {g.label} ({g.sites.length} sites)
+                    </p>
+                    <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                      {[...g.sites].sort((a: any, b: any) => b.temp - a.temp).map((s: any) => (
+                        <div key={s.site} className="flex justify-between gap-4 py-0.5">
+                          <span className="text-gray-600">{s.site}</span>
+                          <span className="font-bold">{s.temp}°C</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )
               }}
             />
-            <Bar
-  dataKey="temp"
-  radius={[0, 4, 4, 0]}
-  isAnimationActive={false}
-  shape={(props: any) => {
-    const { x, y, width, height, index } = props
-    const entry = latestTemp[index]
-    const ratio = maxTemp > minTemp ? (entry.temp - minTemp) / (maxTemp - minTemp) : 0.5
-    const r = Math.round(255 * ratio)
-    const b = Math.round(255 * (1 - ratio))
-    return (
-      <rect
-        x={x} y={y}
-        width={width} height={height}
-        fill={`rgb(${r}, 100, ${b})`}
-        rx={4} ry={4}
-      />
-    )
-  }}
->
-  <LabelList
-    dataKey="temp"
-    position="right"
-    formatter={(value: any) => `${value}°C`}
-    style={{ fontSize: 11, fontWeight: 'bold', fill: '#111' }}
-  />
-</Bar>
-          </BarChart>
+          </PieChart>
         </ResponsiveContainer>
       </div>
     )

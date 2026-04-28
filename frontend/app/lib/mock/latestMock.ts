@@ -8,6 +8,36 @@ const SITES = [
   "Nonthaburi-01", "Nakhonpathom-01", "Samutsakorn-01"
 ]
 
+const SITE_COORDS: Record<string, { lat: number; lon: number }> = {
+  "Sikhio-Outbound":   { lat: 14.889,  lon: 101.724 },
+  "Sikhio-Inbound":    { lat: 14.889,  lon: 101.720 },
+  "bangkok_01":        { lat: 13.756,  lon: 100.502 },
+  "Rest Area KM 120":  { lat: 14.500,  lon: 100.800 },
+  "Korat-North":       { lat: 14.970,  lon: 102.110 },
+  "Korat-South":       { lat: 14.960,  lon: 102.095 },
+  "Ayutthaya-01":      { lat: 14.354,  lon: 100.570 },
+  "Ayutthaya-02":      { lat: 14.360,  lon: 100.578 },
+  "Saraburi-01":       { lat: 14.532,  lon: 100.912 },
+  "Saraburi-02":       { lat: 14.538,  lon: 100.920 },
+  "Chonburi-01":       { lat: 13.362,  lon: 100.985 },
+  "Chonburi-02":       { lat: 13.368,  lon: 100.993 },
+  "Rayong-01":         { lat: 12.672,  lon: 101.277 },
+  "Pattaya-01":        { lat: 12.927,  lon: 100.877 },
+  "Nakhon-01":         { lat: 14.970,  lon: 102.118 },
+  "Nakhon-02":         { lat: 14.976,  lon: 102.126 },
+  "Lopburi-01":        { lat: 14.799,  lon: 100.654 },
+  "Singburi-01":       { lat: 14.890,  lon: 100.402 },
+  "Angthong-01":       { lat: 14.596,  lon: 100.460 },
+  "Suphanburi-01":     { lat: 14.473,  lon: 100.129 },
+  "Kanchanaburi-01":   { lat: 14.004,  lon:  99.547 },
+  "Ratchaburi-01":     { lat: 13.537,  lon:  99.817 },
+  "Samutprakan-01":    { lat: 13.596,  lon: 100.602 },
+  "Pathumthani-01":    { lat: 14.019,  lon: 100.529 },
+  "Nonthaburi-01":     { lat: 13.859,  lon: 100.516 },
+  "Nakhonpathom-01":   { lat: 13.819,  lon: 100.064 },
+  "Samutsakorn-01":    { lat: 13.547,  lon: 100.274 },
+}
+
 const randomTime = () =>
   new Date(Date.now() - Math.floor(Math.random() * 30) * 60000)
     .toISOString().replace("T", " ").slice(0, 19)
@@ -20,6 +50,8 @@ export const buildMockLatestWeather = () =>
     temperature: Math.floor(Math.random() * 15) + 28,
     humidity: Math.floor(Math.random() * 40) + 40,
     timestamp: randomTime(),
+    lat: SITE_COORDS[site]?.lat,
+    lon: SITE_COORDS[site]?.lon,
   }))
 
 export const buildMockLatestParking = () =>

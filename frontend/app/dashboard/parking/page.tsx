@@ -13,6 +13,11 @@ import { PARKING_MOCK } from "@/app/lib/mock/parkingMock"
 const SITES = ["Sikhio-Outbound", "Sikhio-Inbound", "bangkok_01", "Rest Area KM 120"]
 const PAGE_SIZE = 10
 
+function formatTs(ts: string | undefined | null) {
+  if (!ts) return "-"
+  return ts.replace("T", " ").slice(0, 19)
+}
+
 type ParkingRecord = {
   siteName: string
   deviceId: string
@@ -76,7 +81,7 @@ export default function ParkingPage() {
       Available: item.available,
       Capacity: item.capacity,
       Status: item.available === 0 ? "FULL" : "AVAILABLE",
-      Timestamp: item.timestamp,
+      Timestamp: formatTs(item.timestamp),
     })))
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
@@ -102,7 +107,7 @@ export default function ParkingPage() {
         item.available,
         item.capacity,
         item.available === 0 ? "FULL" : "AVAILABLE",
-        item.timestamp,
+        formatTs(item.timestamp),
       ]),
       styles: { fontSize: 8 },
       headStyles: { fillColor: [0, 0, 0] },
@@ -172,7 +177,7 @@ export default function ParkingPage() {
       {!loading && data.length > 0 && (
         <div className="bg-white rounded shadow p-4 mb-4">
           <h2 className="text-lg font-bold text-black mb-4">{site} — Parking Available</h2>
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer debounce={350} width="100%" height={250}>
   <BarChart data={chartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
     <CartesianGrid strokeDasharray="3 3" />
     <XAxis dataKey="index" label={{ value: "ครั้งที่", position: "insideBottomRight", offset: -5 }} />
@@ -232,7 +237,7 @@ export default function ParkingPage() {
                         {isFull ? "FULL" : "AVAILABLE"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 )
               })

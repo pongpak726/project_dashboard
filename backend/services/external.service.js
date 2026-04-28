@@ -8,7 +8,8 @@ exports.getWeather = async ({ site, limit } = {}) => {
   return data.data.map(item => ({
     location: item.site_name,
     deviceId: item.device_id,
-    // ❌ ลบ lat/lon ออก
+    lat: Number(item.latitude) || 0,
+    lon: Number(item.longitude) || 0,
     temperature: Number(item.temp_c) || 0,
     humidity: Number(item.humidity_pct) || 0,
     pm25: Number(item.pm25_ugm3) || 0,
@@ -43,7 +44,8 @@ exports.getParking = async ({ site, limit } = {}) => {
   return data.data.map(item => ({
     siteName: item.site_name,
     deviceId: item.device_id,
-    // ❌ ลบ lat/lon ออก
+    lat: Number(item.latitude) || 0,
+    lon: Number(item.longitude) || 0,
     capacity: Number(item.capacity) || 0,
     available: Number(item.available) || 0,
     timestamp: item.created_at

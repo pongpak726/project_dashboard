@@ -16,6 +16,11 @@ const SITES = [
 
 const PAGE_SIZE = 10
 
+function formatTs(ts: string | undefined | null) {
+  if (!ts) return "-"
+  return ts.replace("T", " ").slice(0, 19)
+}
+
 function PM25Badge({ value }: { value: number }) {
   const color =
     value <= 25
@@ -74,7 +79,7 @@ export default function WeatherPage() {
     "PM2.5 (ug/m3)": item.pm25,        
     "Temperature (C)": item.temperature, 
     "Humidity (%)": item.humidity,
-    Timestamp: item.timestamp,
+    Timestamp: formatTs(item.timestamp),
   })))
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
   const url = URL.createObjectURL(blob)
@@ -101,7 +106,7 @@ const exportPDF = () => {
       `${item.pm25} ug/m3`,
       `${item.temperature} C`,
       `${item.humidity}%`,
-      item.timestamp,
+      formatTs(item.timestamp),
     ]),
     styles: { fontSize: 8 },
     headStyles: { fillColor: [0, 0, 0] },
@@ -235,7 +240,7 @@ const chartData = [...data]
       </div>
     </div>
 
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer debounce={350} width="100%" height={250}>
       <LineChart data={chartData} margin={{ left: -20, right: 10, top: 5, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="index" label={{ value: "ครั้งที่", position: "insideBottomRight", offset: -5 }} />
@@ -305,7 +310,7 @@ const chartData = [...data]
                   </td>
                   <td className="px-4 py-3 text-center">{item.temperature} °C</td>
                   <td className="px-4 py-3 text-center">{item.humidity} %</td>
-                  <td className="px-4 py-3 text-gray-500">{item.timestamp}</td>
+                  <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                 </tr>
               ))
             )}

@@ -1,11 +1,19 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRequireAuth } from "@/app/lib/hooks/useRequireAuth"
 import AdminNavbar from "@/components/layout/AdminNavbar"
 import Navbar from "@/components/layout/Navbar"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const authorized = useRequireAuth(["ADMIN", "SUPER_ADMIN"])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
 
   if (!authorized) {
     return (

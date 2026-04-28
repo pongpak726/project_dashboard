@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
           <h2 className="text-sm font-semibold text-blue-600 mb-1">📊 API Usage by Endpoint</h2>
           <p className="text-xs text-gray-400 mb-4">Total requests per endpoint</p>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer debounce={350} width="100%" height={300}>
             <BarChart data={apiUsageData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fill: "#555", fontSize: 12 }} />
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
           <h2 className="text-sm font-semibold text-blue-600 mb-1">👥 Active Users by Transaction Count</h2>
           <p className="text-xs text-gray-400 mb-4">Requests grouped by user</p>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer debounce={350} width="100%" height={300}>
             <BarChart data={activeUsersData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="name" tick={{ fill: "#555", fontSize: 11 }} />

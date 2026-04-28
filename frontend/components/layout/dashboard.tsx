@@ -33,7 +33,7 @@ export default function DashboardNav() {
       h-screen sticky top-0
       bg-gray-800 text-white p-4
       flex flex-col justify-between
-      transition-all duration-300 overflow-hidden
+      transition-[width] duration-300 overflow-hidden
     ">
       <ul className="space-y-2">
         {menus.map((menu) => (
