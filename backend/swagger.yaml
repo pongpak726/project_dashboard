@@ -1,0 +1,241 @@
+openapi: 3.0.0
+info:
+  title: Dashboard API
+  version: 1.0.0
+  description: API for Dashboard + VMS system
+
+servers:
+  - url: http://localhost:5000/api
+
+tags:
+  - name: Auth
+  - name: Dashboard
+  - name: VMS
+  - name: Device
+  - name: Admin
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    VMS:
+      type: object
+      properties:
+        id:
+          type: string
+          example: bangkok_01:vms-001
+        siteName:
+          type: string
+        lat:
+          type: number
+          nullable: true
+        lon:
+          type: number
+          nullable: true
+        currentImage:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    Weather:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        temperature:
+          type: number
+        humidity:
+          type: number
+        pm25:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+
+    LoginLog:
+      type: object
+      properties:
+        username:
+          type: string
+        ip:
+          type: string
+        userAgent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+
+  # ================= AUTH =================
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: success
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh token
+      responses:
+        200:
+          description: success
+
+  # ================= DASHBOARD =================
+  /dashboard/weather:
+    get:
+      tags: [Dashboard]
+      summary: Get weather data
+      parameters:
+        - in: query
+          name: site
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: success
+
+  /dashboard/restroom:
+    get:
+      tags: [Dashboard]
+      summary: Get restroom data
+      responses:
+        200:
+          description: success
+
+  /dashboard/parking:
+    get:
+      tags: [Dashboard]
+      summary: Get parking data
+      responses:
+        200:
+          description: success
+
+  /dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Get overview
+      responses:
+        200:
+          description: success
+
+  # ================= DEVICE =================
+  /dashboard/devices:
+    get:
+      tags: [Device]
+      summary: Get all devices
+      responses:
+        200:
+          description: success
+
+  # ================= VMS =================
+  /vms/ingest:
+    post:
+      tags: [VMS]
+      summary: Upload VMS image
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: bangkok_01:vms-001
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Uploaded
+
+  /vms/latesvms:
+    get:
+      tags: [VMS]
+      summary: Get latest VMS
+      responses:
+        200:
+          description: success
+
+  /vms/logs:
+    get:
+      tags: [VMS]
+      summary: Get VMS logs
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: success
+
+  /vms/{id}/location:
+    patch:
+      tags: [VMS]
+      summary: Update VMS location
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                lat:
+                  type: number
+                  example: 13.75
+                lon:
+                  type: number
+                  example: 100.50
+      responses:
+        200:
+          description: updated
+
+  # ================= ADMIN =================
+  /admin/login-logs:
+    get:
+      tags: [Admin]
+      summary: Get login logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        200:
+          description: success
