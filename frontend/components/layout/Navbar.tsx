@@ -75,7 +75,7 @@ export default function Navbar() {
       <div className="flex items-center gap-2">
         {user ? (
           <>
-            <Link href="/dashboard" className={navLinkClass("/dashboard", true)}>
+            <Link href="/dashboard" className={navLinkClass("/dashboard")}>
               Dashboard
             </Link>
 

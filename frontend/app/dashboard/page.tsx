@@ -92,6 +92,34 @@ function PM25Badge({ value }: { value: number }) {
   )
 }
 
+function ParkingStatusBadge({ available, capacity }: { available: number; capacity: number }) {
+  const pct = capacity > 0 ? (available / capacity) * 100 : 0
+  const [color, label] =
+    available === 0 ? ["bg-red-400 text-red-900",       "FULL"] :
+    pct < 50        ? ["bg-yellow-300 text-yellow-900", "ALMOST FULL"] :
+                      ["bg-green-100 text-green-800",   "AVAILABLE"]
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${color}`}>
+      {label}
+    </span>
+  )
+}
+
+function RestroomStatusBadge({ maleAvailable, maleTotal, femaleAvailable, femaleTotal }: { maleAvailable: number; maleTotal: number; femaleAvailable: number; femaleTotal: number }) {
+  const totalAvailable = maleAvailable + femaleAvailable
+  const totalCapacity = maleTotal + femaleTotal
+  const pct = totalCapacity > 0 ? (totalAvailable / totalCapacity) * 100 : 0
+  const [color, label] =
+    totalAvailable === 0 ? ["bg-red-400 text-red-900",       "FULL"] :
+    pct < 50             ? ["bg-yellow-300 text-yellow-900", "ALMOST FULL"] :
+                           ["bg-green-100 text-green-800",   "AVAILABLE"]
+  return (
+    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${color}`}>
+      {label}
+    </span>
+  )
+}
+
 export default function OverviewPage() {
   const [pm25Data, setPm25Data] = useState<any[]>([])
   const [usageData, setUsageData] = useState<any[]>([])
@@ -106,6 +134,11 @@ export default function OverviewPage() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [page, setPage] = useState({ weather: 1, parking: 1, restroom: 1 })
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | null>(null)
+  const [sortTempOrder, setSortTempOrder] = useState<"asc" | "desc" | null>(null)
+  const [sortHumidityOrder, setSortHumidityOrder] = useState<"asc" | "desc" | null>(null)
+  const [sortTsOrder, setSortTsOrder] = useState<"asc" | "desc" | null>(null)
+  const [sortParkingStatus, setSortParkingStatus] = useState<"asc" | "desc" | null>(null)
+  const [sortRestroomStatus, setSortRestroomStatus] = useState<"asc" | "desc" | null>(null)
   const [restroomFilter, setRestroomFilter] = useState<'Both' | 'Male' | 'Female'>('Both')
 
   useEffect(() => {
@@ -128,15 +161,15 @@ export default function OverviewPage() {
         const temp = buildMultiSiteTempChart(sortedWeather)
 
         // ---- PM2.5 ----
-         setPm25Data(pm) // production
-         //setPm25Data(buildMockPm25Data()) // mock
+         //setPm25Data(pm) // production
+         setPm25Data(buildMockPm25Data()) // mock
 
         const allSites = Object.keys(pm[0] || {}).filter(k => k !== "index" && !k.endsWith("_time"))
         setSelectedSites(allSites.slice(0, 5))
 
         // ---- Temperature ----
-        setTempData(temp) // production
-        //setTempData(buildMockTempData()) // mock
+        //setTempData(temp) // production
+        setTempData(buildMockTempData()) // mock
 
          //---- Latest Weather ----
          const latestWeatherData = res.data.flatMap((d: any) => {
@@ -157,8 +190,8 @@ export default function OverviewPage() {
              }
            })
          })
-        setLatestWeather(latestWeatherData) // production
-        //setLatestWeather(buildMockLatestWeather()) // mock
+        //setLatestWeather(latestWeatherData) // production
+        setLatestWeather(buildMockLatestWeather()) // mock
 
         setUsageData(usage)
 
@@ -178,8 +211,8 @@ export default function OverviewPage() {
              timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         setRestroomLatest(latestRestroomData) // production
-        //setRestroomLatest(buildMockLatestRestroom()) // mock
+         //setRestroomLatest(latestRestroomData) // production
+         setRestroomLatest(buildMockLatestRestroom()) // mock
 
         // ---- Latest Parking ----
          const latestParkingData = res.data.map((d: any) => {
@@ -192,8 +225,8 @@ export default function OverviewPage() {
              used: latest.capacity - latest.available, timestamp: latest.timestamp,
            }
          }).filter(Boolean)
-         setParkingLatest(latestParkingData) // production
-         //setParkingLatest(buildMockLatestParking()) // mock
+         //setParkingLatest(latestParkingData) // production
+         setParkingLatest(buildMockLatestParking()) // mock
 
         const pmInsight = buildPmInsight(pm)
         const weatherInsight = buildWeatherInsight(weather)
@@ -216,8 +249,32 @@ export default function OverviewPage() {
   const sortedWeatherData = useMemo(() => [...latestWeather].sort((a, b) => {
     if (sortOrder === "asc") return a.pm25 - b.pm25
     if (sortOrder === "desc") return b.pm25 - a.pm25
+    if (sortTempOrder === "asc") return a.temperature - b.temperature
+    if (sortTempOrder === "desc") return b.temperature - a.temperature
+    if (sortHumidityOrder === "asc") return a.humidity - b.humidity
+    if (sortHumidityOrder === "desc") return b.humidity - a.humidity
+    if (sortTsOrder === "asc") return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    if (sortTsOrder === "desc") return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     return 0
-  }), [latestWeather, sortOrder])
+  }), [latestWeather, sortOrder, sortTempOrder, sortHumidityOrder, sortTsOrder])
+
+  const sortedParkingData = useMemo(() => [...parkingLatest].sort((a, b) => {
+    const occA = a.capacity > 0 ? a.available / a.capacity : 0
+    const occB = b.capacity > 0 ? b.available / b.capacity : 0
+    if (sortParkingStatus === "asc") return occA - occB
+    if (sortParkingStatus === "desc") return occB - occA
+    return 0
+  }), [parkingLatest, sortParkingStatus])
+
+  const sortedRestroomData = useMemo(() => [...restroomLatest].sort((a, b) => {
+    const totalA = a.maleTotal + a.femaleTotal
+    const totalB = b.maleTotal + b.femaleTotal
+    const pctA = totalA > 0 ? (a.maleAvailable + a.femaleAvailable) / totalA : 0
+    const pctB = totalB > 0 ? (b.maleAvailable + b.femaleAvailable) / totalB : 0
+    if (sortRestroomStatus === "asc") return pctA - pctB
+    if (sortRestroomStatus === "desc") return pctB - pctA
+    return 0
+  }), [restroomLatest, sortRestroomStatus])
 
   if (loading) {
     return (
@@ -261,16 +318,32 @@ export default function OverviewPage() {
                   <th className="px-4 py-3 text-left">🆔 Device</th>
                   <th
   className="px-4 py-3 text-center cursor-pointer hover:bg-gray-800 select-none"
-  onClick={() => setSortOrder(prev =>
-    prev === null ? "asc" : prev === "asc" ? "desc" : null
-  )}
+  onClick={() => { setSortTempOrder(null); setSortHumidityOrder(null); setSortTsOrder(null); setSortOrder(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null) }}
 >
   🌫️ PM2.5
   {sortOrder === "asc" ? " ↑" : sortOrder === "desc" ? " ↓" : " ↕"}
 </th>
-                  <th className="px-4 py-3 text-center">🌡️ Temperature</th>
-                  <th className="px-4 py-3 text-center">💧 Humidity</th>
-                  <th className="px-4 py-3 text-left">🕒 Timestamp</th>
+                  <th
+  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-800 select-none"
+  onClick={() => { setSortOrder(null); setSortHumidityOrder(null); setSortTsOrder(null); setSortTempOrder(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null) }}
+>
+  🌡️ Temperature
+  {sortTempOrder === "asc" ? " ↑" : sortTempOrder === "desc" ? " ↓" : " ↕"}
+</th>
+                  <th
+  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-800 select-none"
+  onClick={() => { setSortOrder(null); setSortTempOrder(null); setSortTsOrder(null); setSortHumidityOrder(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null) }}
+>
+  💧 Humidity
+  {sortHumidityOrder === "asc" ? " ↑" : sortHumidityOrder === "desc" ? " ↓" : " ↕"}
+</th>
+                  <th
+  className="px-4 py-3 text-left cursor-pointer hover:bg-gray-800 select-none"
+  onClick={() => { setSortOrder(null); setSortTempOrder(null); setSortHumidityOrder(null); setSortTsOrder(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null) }}
+>
+  🕒 Timestamp
+  {sortTsOrder === "asc" ? " ↑" : sortTsOrder === "desc" ? " ↓" : " ↕"}
+</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,23 +371,25 @@ export default function OverviewPage() {
                   <th className="px-4 py-3 text-left">📍 Location</th>
                   <th className="px-4 py-3 text-left">🆔 Device</th>
                   <th className="px-4 py-3 text-center">🚗 Available / Capacity</th>
-                  <th className="px-4 py-3 text-center">Status</th>
+                  <th
+  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-800 select-none"
+  onClick={() => setSortParkingStatus(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null)}
+>
+  Status
+  {sortParkingStatus === "asc" ? " ↑" : sortParkingStatus === "desc" ? " ↓" : " ↕"}
+</th>
                   <th className="px-4 py-3 text-left">🕒 Timestamp</th>
                 </tr>
               </thead>
               <tbody>
                 {parkingLatest.length === 0 ? (
                   <tr><td colSpan={5} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
-                ) : paginate(parkingLatest, page.parking).map((item, i) => (
+                ) : paginate(sortedParkingData, page.parking).map((item, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.site}</td>
                     <td className="px-4 py-3 text-gray-500">{item.deviceId?.split(":").slice(1).join(":")}</td>
                     <td className="px-4 py-3 text-center">{item.available} / {item.capacity}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.available === 0 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}>
-                        {item.available === 0 ? "FULL" : "AVAILABLE"}
-                      </span>
-                    </td>
+                    <td className="px-4 py-3 text-center"><ParkingStatusBadge available={item.available} capacity={item.capacity} /></td>
                     <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 ))}
@@ -330,25 +405,26 @@ export default function OverviewPage() {
                   <th className="px-4 py-3 text-left">🆔 Device</th>
                   <th className="px-4 py-3 text-center">🚹 Male (Available/Total)</th>
                   <th className="px-4 py-3 text-center">🚺 Female (Available/Total)</th>
-                  <th className="px-4 py-3 text-center">Status</th>
+                  <th
+  className="px-4 py-3 text-center cursor-pointer hover:bg-gray-800 select-none"
+  onClick={() => setSortRestroomStatus(prev => prev === null ? "asc" : prev === "asc" ? "desc" : null)}
+>
+  Status
+  {sortRestroomStatus === "asc" ? " ↑" : sortRestroomStatus === "desc" ? " ↓" : " ↕"}
+</th>
                   <th className="px-4 py-3 text-left">🕒 Timestamp</th>
                 </tr>
               </thead>
               <tbody>
                 {restroomLatest.length === 0 ? (
                   <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400">No data</td></tr>
-                ) : paginate(restroomLatest, page.restroom).map((item, i) => (
+                ) : paginate(sortedRestroomData, page.restroom).map((item, i) => (
                   <tr key={i} className="border-t hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.site}</td>
                     <td className="px-4 py-3 text-gray-500">{item.deviceId?.split(":").slice(1).join(":")}</td>
                     <td className="px-4 py-3 text-center">{item.maleAvailable} / {item.maleTotal}</td>
                     <td className="px-4 py-3 text-center">{item.femaleAvailable} / {item.femaleTotal}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.maleAvailable === 0 && item.femaleAvailable === 0
-                          ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"}`}>
-                        {item.maleAvailable === 0 && item.femaleAvailable === 0 ? "FULL" : "AVAILABLE"}
-                      </span>
-                    </td>
+                    <td className="px-4 py-3 text-center"><RestroomStatusBadge maleAvailable={item.maleAvailable} maleTotal={item.maleTotal} femaleAvailable={item.femaleAvailable} femaleTotal={item.femaleTotal} /></td>
                     <td className="px-4 py-3 text-gray-500">{formatTs(item.timestamp)}</td>
                   </tr>
                 ))}

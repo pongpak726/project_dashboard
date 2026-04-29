@@ -45,7 +45,7 @@ const randomTime = () =>
 export const buildMockLatestWeather = () =>
   SITES.map((site, i) => ({
     site,
-    deviceId: `weather-station-${String(i + 1).padStart(3, "0")}`,
+    deviceId: `${site}:weather-station-${String(i + 1).padStart(3, "0")}`,
     pm25: Math.floor(Math.random() * 80) + 10,
     temperature: Math.floor(Math.random() * 15) + 28,
     humidity: Math.floor(Math.random() * 40) + 40,
@@ -57,10 +57,11 @@ export const buildMockLatestWeather = () =>
 export const buildMockLatestParking = () =>
   SITES.map((site, i) => {
     const capacity = [50, 40, 100, 60, 80, 70, 45, 55][i % 8]
-    const available = Math.floor(Math.random() * capacity)
+    const roll = Math.random()
+    const available = roll < 0.25 ? 0 : roll < 0.5 ? Math.floor(Math.random() * capacity * 0.4) : Math.floor(Math.random() * capacity)
     return {
       site,
-      deviceId: `parking-${String(i + 1).padStart(3, "0")}`,
+      deviceId: `${site}:parking-${String(i + 1).padStart(3, "0")}`,
       capacity,
       available,
       used: capacity - available,
@@ -76,7 +77,7 @@ export const buildMockLatestRestroom = () =>
     const femaleAvailable = Math.floor(Math.random() * (femaleTotal + 1))
     return {
       site,
-      deviceId: `restroom-${String(i + 1).padStart(3, "0")}`,
+      deviceId: `${site}:restroom-${String(i + 1).padStart(3, "0")}`,
       maleTotal,
       maleAvailable,
       maleUsed: maleTotal - maleAvailable,
