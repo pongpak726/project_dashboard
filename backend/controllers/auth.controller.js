@@ -15,11 +15,7 @@ exports.login = async (req, res, next) => {
   try {
     const user = await authService.login(req.body)
 
-    // ✅ log ก่อนตอบ
-    await logService.createLoginLog({
-      user,
-      req
-    })
+    logService.createLoginLog({ user, req }).catch(() => {})
 
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken(user)

@@ -49,7 +49,7 @@ exports.updateUser = async (req, res, next) => {
 // DELETE /users/:id
 exports.deleteUser = async (req, res, next) => {
   try {
-    await userService.deleteUser(req.params.id);
+    await userService.deleteUser(req.params.id, req.user);
     res.json({ message: "User deleted" });
   } catch (error) {
     next(error);

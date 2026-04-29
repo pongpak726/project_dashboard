@@ -105,6 +105,10 @@ export default function UsersPage() {
     finally { setLoadingId(null); }
   };
 
+  const rolePriority: Record<string, number> = { USER: 1, ADMIN: 2, SUPER_ADMIN: 3 }
+  const canEditUser = (targetRole: string) =>
+    rolePriority[targetRole] <= rolePriority[currentUser?.role ?? "USER"]
+
   const inputClass = "w-full bg-white border border-[#334155] text-black placeholder:text-gray-500 p-2.5 rounded-lg focus:outline-none focus:border-blue-500 transition-colors";
   const selectClass = "w-full bg-white border border-[#334155] text-black p-2.5 rounded-lg focus:outline-none focus:border-blue-500 transition-colors";
 
@@ -190,12 +194,16 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => openEditModal(user)} className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg transition-colors">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDeleteUser(user.id)} disabled={loadingId === user.id} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
-                          {loadingId === user.id ? "..." : "Delete"}
-                        </button>
+                        {canEditUser(user.role) && (
+                          <button onClick={() => openEditModal(user)} className="px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg transition-colors">
+                            Edit
+                          </button>
+                        )}
+                        {canEditUser(user.role) && (
+                          <button onClick={() => handleDeleteUser(user.id)} disabled={loadingId === user.id} className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+                            {loadingId === user.id ? "..." : "Delete"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

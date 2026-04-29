@@ -8,6 +8,7 @@ const errorHandler = require("./middleware/error")
 const dashboardRoutes = require("./routes/external.routes")
 const vmsRoutes = require("./routes/vms.routes")
 const docRoutes = require("./routes/doc.routes")
+const logRoutes = require("./routes/log.routes")
 
 require("./utils/cron")
 
@@ -31,6 +32,7 @@ app.use("/api/users", userRoute)
 app.use("/api/auth", authRoutes)
 app.use("/api/dashboard", dashboardRoutes)
 app.use("/api/vms", vmsRoutes)
+app.use("/api/logs", logRoutes)
 
 app.get("/", (req, res) => res.send("Backend running 🚀"))
 app.use("/api-docs", docRoutes)

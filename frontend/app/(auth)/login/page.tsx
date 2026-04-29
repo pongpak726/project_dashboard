@@ -41,7 +41,13 @@ export default function LoginPage() {
 
       localStorage.setItem("accessToken", data.accessToken)
       localStorage.setItem("refreshToken", data.refreshToken)
-      router.push("/dashboard")
+
+      const payload = JSON.parse(atob(data.accessToken.split(".")[1]))
+      if (payload.role === "ADMIN" || payload.role === "SUPER_ADMIN") {
+        router.push("/admin/users")
+      } else {
+        router.push("/dashboard")
+      }
     } catch (err: any) {
       Swal.fire({
         icon: "error",
@@ -62,7 +68,7 @@ export default function LoginPage() {
   if (!user) return
 
   if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
-    router.push("/admin/dashboard")
+    router.push("/admin/users")
   } else {
     router.push("/dashboard")
   }

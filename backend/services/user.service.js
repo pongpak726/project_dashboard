@@ -67,6 +67,13 @@ exports.updateUser = async (id, data, currentUser) => {
     throw new Error("User not found")
   }
 
+  // ===== BLOCK EDITING HIGHER ROLE =====
+  const rolePriority = { USER: 1, ADMIN: 2, SUPER_ADMIN: 3 }
+
+  if (rolePriority[existingUser.role] > rolePriority[currentUser.role]) {
+    throw new Error("Forbidden")
+  }
+
   let updateData = {}
 
   // ===== ROLE FILTER =====
@@ -91,12 +98,6 @@ exports.updateUser = async (id, data, currentUser) => {
   }
 
   // ===== ROLE SECURITY =====
-  const rolePriority = {
-    USER: 1,
-    ADMIN: 2,
-    SUPER_ADMIN: 3
-  }
-
   if (updateData.role) {
     if (rolePriority[updateData.role] > rolePriority[currentUser.role]) {
       throw new Error("Cannot assign higher role than yourself")
@@ -144,7 +145,16 @@ exports.updateUser = async (id, data, currentUser) => {
 }
 
 // delete
-exports.deleteUser = async (id) => {
+exports.deleteUser = async (id, currentUser) => {
+  const rolePriority = { USER: 1, ADMIN: 2, SUPER_ADMIN: 3 }
+
+  const target = await prisma.user.findUnique({ where: { id } })
+  if (!target) throw new Error("User not found")
+
+  if (rolePriority[target.role] > rolePriority[currentUser.role]) {
+    throw new Error("Forbidden")
+  }
+
   try {
     return await prisma.user.delete({
       where: { id }

@@ -15,3 +15,20 @@ exports.createLoginLog = async ({ user, req }) => {
     }
   })
 }
+
+exports.getLogs = async ({ page = 1, limit = 20, username } = {}) => {
+  const skip = (page - 1) * limit
+  const where = username ? { username: { contains: username } } : {}
+
+  const [logs, total] = await Promise.all([
+    prisma.loginLog.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit
+    }),
+    prisma.loginLog.count({ where })
+  ])
+
+  return { logs, total, page, limit }
+}
